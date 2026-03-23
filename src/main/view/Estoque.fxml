@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<VBox maxHeight="600.0" maxWidth="1000.0" spacing="15.0" style="-fx-background-color: #f5f7fa;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="main.controllers.EstoqueController">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+   <children>
+      <HBox alignment="CENTER_LEFT" spacing="15.0">
+         <children>
+            <Text fill="#2c5282" strokeType="OUTSIDE" strokeWidth="0.0" text="Controle de Estoque">
+               <font>
+                  <Font name="Segoe UI" size="18.0" />
+               </font>
+            </Text>
+            <Region HBox.hgrow="ALWAYS" />
+            <HBox alignment="CENTER_LEFT" maxWidth="400.0" spacing="8.0" style="-fx-background-color: white; -fx-border-color: #d0d0d0; -fx-border-width: 1; -fx-padding: 5 10;" HBox.hgrow="ALWAYS">
+               <children>
+                  <Label style="-fx-text-fill: #888;" text="🔍" />
+                  <TextField fx:id="searchField" promptText="Pesquisar..." style="-fx-background-color: transparent; -fx-border-width: 0;" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+         </children>
+      </HBox>
+      <HBox alignment="CENTER_LEFT" spacing="10.0">
+         <children>
+            <Label style="-fx-text-fill: #666;" text="Filtrar por Categoria:">
+               <font>
+                  <Font name="Segoe UI" size="11.0" />
+               </font>
+            </Label>
+            <ComboBox fx:id="cbFiltroCategoria" prefWidth="150.0" promptText="Todas" style="-fx-background-color: white; -fx-border-color: #d0d0d0; -fx-border-width: 1;" />
+            <Label style="-fx-text-fill: #666;" text="Situação:">
+               <font>
+                  <Font name="Segoe UI" size="11.0" />
+               </font>
+            </Label>
+            <ComboBox fx:id="cbFiltroSituacao" prefWidth="150.0" promptText="Todos" style="-fx-background-color: white; -fx-border-color: #d0d0d0; -fx-border-width: 1;" />
+            <Button fx:id="btnFiltrar" mnemonicParsing="false" onAction="#handleFiltrar" prefHeight="28.0" prefWidth="80.0" style="-fx-background-color: #5a9fd4; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 11;" text="Filtrar" />
+            <Button fx:id="btnLimparFiltro" mnemonicParsing="false" onAction="#handleLimparFiltro" prefHeight="28.0" prefWidth="80.0" style="-fx-background-color: #999; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 11;" text="Limpar" />
+         </children>
+      </HBox>
+      <VBox style="-fx-background-color: white; -fx-border-color: #d0d0d0; -fx-border-width: 1;" VBox.vgrow="ALWAYS">
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
+         <children>
+            <TableView fx:id="tableEstoque" style="-fx-background-color: white; -fx-border-width: 0;" VBox.vgrow="ALWAYS">
+              <columns>
+                <TableColumn fx:id="colId" minWidth="40.0" prefWidth="50.0" maxWidth="70.0" style="-fx-alignment: CENTER;" text="ID" />
+                <TableColumn fx:id="colCodigo" minWidth="80.0" prefWidth="90.0" maxWidth="120.0" style="-fx-alignment: CENTER;" text="Código" />
+                <TableColumn fx:id="colNome" minWidth="200.0" prefWidth="250.0" maxWidth="350.0" text="Produto" />
+                <TableColumn fx:id="colCategoria" minWidth="100.0" prefWidth="120.0" maxWidth="150.0" text="Categoria" />
+                <TableColumn fx:id="colEstoqueAtual" minWidth="80.0" prefWidth="90.0" maxWidth="110.0" style="-fx-alignment: CENTER;" text="Estoque Atual" />
+                <TableColumn fx:id="colEstoqueMin" minWidth="80.0" prefWidth="100.0" maxWidth="120.0" style="-fx-alignment: CENTER;" text="Estoque Mín." />
+                <TableColumn fx:id="colSituacao" minWidth="80.0" prefWidth="90.0" maxWidth="110.0" style="-fx-alignment: CENTER;" text="Situação" />
+                <TableColumn fx:id="colUltimaAtualizacao" minWidth="110.0" prefWidth="130.0" maxWidth="160.0" style="-fx-alignment: CENTER;" text="Última Atualização" />
+              </columns>
+            </TableView>
+         </children>
+      </VBox>
+      <HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color: #e8e8e8; -fx-padding: 10; -fx-border-color: #d0d0d0; -fx-border-width: 1 0 0 0;">
+         <children>
+            <Label fx:id="lblTotal" style="-fx-text-fill: #666;" text="Total: 0 produtos">
+               <font>
+                  <Font name="Segoe UI" size="11.0" />
+               </font>
+            </Label>
+            <Region HBox.hgrow="ALWAYS" />
+            <Label fx:id="lblBaixoEstoque" style="-fx-text-fill: #e57373;" text="⚠ 0 produtos abaixo do estoque mínimo">
+               <font>
+                  <Font name="Segoe UI Semibold" size="11.0" />
+               </font>
+            </Label>
+         </children>
+      </HBox>
+   </children>
+</VBox>
