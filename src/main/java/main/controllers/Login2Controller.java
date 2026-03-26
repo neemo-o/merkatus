@@ -16,6 +16,9 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import main.database.DatabaseConnection;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class Login2Controller {
 
     private double xOffset = 0;

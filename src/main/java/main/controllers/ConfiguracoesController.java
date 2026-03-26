@@ -20,6 +20,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.prefs.Preferences;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class ConfiguracoesController {
 
     @FXML private TextField txtNomeEmpresa;

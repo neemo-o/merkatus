@@ -17,6 +17,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.function.UnaryOperator;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class AuthController {
 
     private double xOffset = 0;
