@@ -176,7 +176,7 @@ CREATE TRIGGER trg_terminais_update
  
 -- Usuário admin da equipe (senha: trocar após primeiro login)
 INSERT INTO usuarios_equipe (nome, email, senha_hash, perfil)
-VALUES ('Administrador', 'admin@erp.com', '$2a$10$placeholder_hash_trocar', 'ADMIN')
+VALUES ('Administrador', 'admin@erp.com', '123456', 'ADMIN')
 ON CONFLICT DO NOTHING;
  
 -- ========================================
