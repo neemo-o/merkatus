@@ -61,19 +61,19 @@ public class ConfiguracoesController {
     void initialize() {
         System.out.println("=== Inicializando ConfiguracoesController ===");
         
-        // Configurar níveis de permissão do banco
+        // ATUALIZADO: níveis agora vêm dos perfis_acesso
+        // Por enquanto mantém estático, futuramente carregar da tabela perfis_acesso
         cbNivelPermissao.setItems(FXCollections.observableArrayList(
-            "admin",
-            "user"
+            "Administrador",
+            "Gerente",
+            "Operador",
+            "Fiscal"
         ));
         
-        // ComboBox editável
         cbNivelPermissao.setDisable(false);
         
-        // Carregar configurações
         carregarConfiguracoes();
         
-        // Aplicar máscaras
         aplicarMascaras();
         
         txtNomeEmpresa.setEditable(false);
@@ -87,10 +87,11 @@ public class ConfiguracoesController {
      */
     private void carregarConfiguracoes() {
         try {
-            // Carregar dados da empresa do banco erp_licencas
+            // ATUALIZADO: Carregar dados da empresa do banco erp_licencas
+            // Agora consulta clientes_licenciados em vez da antiga tabela licencas
             Connection conn = DatabaseConnection.getConnectionLicenses();
             
-            String sql = "SELECT * FROM licencas WHERE status = 'PAGO' LIMIT 1";
+            String sql = "SELECT * FROM clientes_licenciados WHERE ativo = TRUE LIMIT 1";
             PreparedStatement stmt = conn.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
             
@@ -99,7 +100,7 @@ public class ConfiguracoesController {
                 txtCnpj.setText(rs.getString("cnpj"));
                 
                 StringBuilder endereco = new StringBuilder();
-                adicionarCampoEndereco(endereco, rs.getString("rua"), "");
+                adicionarCampoEndereco(endereco, rs.getString("logradouro"), "");
                 adicionarCampoEndereco(endereco, rs.getString("numero"), ", ");
                 adicionarCampoEndereco(endereco, rs.getString("bairro"), " - ");
                 adicionarCampoEndereco(endereco, rs.getString("cidade"), ", ");
@@ -108,37 +109,41 @@ public class ConfiguracoesController {
                 
                 txtEndereco.setText(endereco.toString());
                 
-                System.out.println("✓ Configurações carregadas: " + rs.getString("razao_social"));
+                System.out.println("Configurações carregadas: " + rs.getString("razao_social"));
             } else {
                 txtNomeEmpresa.setText("Nenhuma empresa cadastrada");
                 txtCnpj.setText("");
                 txtEndereco.setText("");
-                System.out.println("⚠ Nenhuma empresa encontrada no banco");
+                System.out.println("Nenhuma empresa encontrada no banco");
             }
             
             rs.close();
             stmt.close();
             
-            // Carregar nível de permissão do usuário logado do banco erp_oficial
+            // ATUALIZADO: Carregar perfil do usuário logado da tabela 'usuarios' + 'perfis_acesso'
+            // Em vez da antiga: SELECT tipo_usuario FROM licencas WHERE id_usuario = ?
             Connection connOficial = DatabaseConnection.getConnectionMercado();
-            String sqlUser = "SELECT tipo_usuario FROM licencas WHERE id_usuario = ?";
+            String sqlUser = "SELECT p.nome AS perfil_nome FROM usuarios u " +
+                           "INNER JOIN perfis_acesso p ON u.id_perfil = p.id_perfil " +
+                           "WHERE u.id_usuario = ?";
             PreparedStatement stmtUser = connOficial.prepareStatement(sqlUser);
             stmtUser.setInt(1, idUsuarioLogado);
             ResultSet rsUser = stmtUser.executeQuery();
             
             if (rsUser.next()) {
-                cbNivelPermissao.setValue(rsUser.getString("tipo_usuario"));
-                originalNivelPermissao = rsUser.getString("tipo_usuario"); // Salvar valor original
+                String perfilNome = rsUser.getString("perfil_nome");
+                cbNivelPermissao.setValue(perfilNome);
+                originalNivelPermissao = perfilNome;
             } else {
-                cbNivelPermissao.setValue("user");
-                originalNivelPermissao = "user"; // Salvar valor original
+                cbNivelPermissao.setValue("Operador");
+                originalNivelPermissao = "Operador";
             }
             
             rsUser.close();
             stmtUser.close();
             
         } catch (Exception e) {
-            System.err.println("✗ Erro ao carregar configurações do banco: " + e.getMessage());
+            System.err.println("Erro ao carregar configurações do banco: " + e.getMessage());
             e.printStackTrace();
         }
         
@@ -150,7 +155,6 @@ public class ConfiguracoesController {
      * Carrega configurações salvas localmente
      */
     private void carregarPreferenciasLocais() {
-        // Valores padrão
         String horaAbertura = prefs.get(PREF_HORARIO_ABERTURA, "08:00");
         String horaFechamento = prefs.get(PREF_HORARIO_FECHAMENTO, "18:00");
         boolean funcionaFds = prefs.getBoolean(PREF_FUNCIONA_FDS, false);
@@ -161,13 +165,12 @@ public class ConfiguracoesController {
         chkFuncionaFds.setSelected(funcionaFds);
         chkBloquearSistemaForaHorario.setSelected(bloquearForaHorario);
         
-        // Salvar valores originais
         originalHorarioAbertura = horaAbertura;
         originalHorarioFechamento = horaFechamento;
         originalFuncionaFds = funcionaFds;
         originalBloquearForaHorario = bloquearForaHorario;
         
-        System.out.println("✓ Preferências locais carregadas");
+        System.out.println("Preferências locais carregadas");
     }
 
     /**
@@ -186,7 +189,6 @@ public class ConfiguracoesController {
      * Aplica máscaras de formatação
      */
     private void aplicarMascaras() {
-        // Máscara HH:MM para horários
         txtHorarioAbertura.textProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null && !newVal.matches("\\d{0,2}:?\\d{0,2}")) {
                 txtHorarioAbertura.setText(oldVal);
@@ -208,21 +210,18 @@ public class ConfiguracoesController {
         
         boolean bloquearForaHorario = prefs.getBoolean(PREF_BLOQUEAR_FORA_HORARIO, false);
         
-        // Se não está configurado para bloquear, sempre permite acesso
         if (!bloquearForaHorario) {
             return true;
         }
         
         LocalDateTime agora = LocalDateTime.now();
-        int diaSemana = agora.getDayOfWeek().getValue(); // 1=Segunda, 7=Domingo
+        int diaSemana = agora.getDayOfWeek().getValue();
         
-        // Verificar se funciona aos finais de semana
         boolean funcionaFds = prefs.getBoolean(PREF_FUNCIONA_FDS, false);
         if (!funcionaFds && (diaSemana == 6 || diaSemana == 7)) {
             return false;
         }
         
-        // Verificar horário
         String horaAbertura = prefs.get(PREF_HORARIO_ABERTURA, "08:00");
         String horaFechamento = prefs.get(PREF_HORARIO_FECHAMENTO, "18:00");
         
@@ -231,13 +230,11 @@ public class ConfiguracoesController {
             LocalTime fechamento = LocalTime.parse(horaFechamento);
             LocalTime horaAtual = agora.toLocalTime();
             
-            // Horário atual deve estar ENTRE abertura e fechamento (inclusive)
-            // Permite se: horaAtual >= abertura E horaAtual <= fechamento
             return (horaAtual.equals(abertura) || horaAtual.isAfter(abertura)) && 
                    (horaAtual.equals(fechamento) || horaAtual.isBefore(fechamento));
         } catch (Exception e) {
             System.err.println("Erro ao validar horário: " + e.getMessage());
-            return true; // Em caso de erro, permite acesso
+            return true;
         }
     }
 
@@ -265,19 +262,19 @@ public class ConfiguracoesController {
         boolean permiteAcesso = verificarHorarioFuncionamento();
         
         String mensagem = String.format(
-            "📅 Dia: %s\n" +
-            "🕐 Hora Atual: %s\n\n" +
-            "⏰ Horário Configurado:\n" +
-            "   • Abertura: %s\n" +
-            "   • Fechamento: %s\n" +
-            "   • Funciona FDS: %s\n\n" +
-            "🔒 Status: %s",
+            "Dia: %s\n" +
+            "Hora Atual: %s\n\n" +
+            "Horário Configurado:\n" +
+            "   Abertura: %s\n" +
+            "   Fechamento: %s\n" +
+            "   Funciona FDS: %s\n\n" +
+            "Status: %s",
             diaSemanaNome,
             horaAtual,
             txtHorarioAbertura.getText(),
             txtHorarioFechamento.getText(),
             chkFuncionaFds.isSelected() ? "Sim" : "Não",
-            permiteAcesso ? "✓ ACESSO PERMITIDO" : "✗ ACESSO BLOQUEADO"
+            permiteAcesso ? "ACESSO PERMITIDO" : "ACESSO BLOQUEADO"
         );
         
         mostrarAlerta("Teste de Bloqueio de Horário", mensagem, 
@@ -297,7 +294,7 @@ public class ConfiguracoesController {
             File selectedDirectory = directoryChooser.showDialog(btnFazerBackup.getScene().getWindow());
             
             if (selectedDirectory == null) {
-                System.out.println("✗ Backup cancelado pelo usuário");
+                System.out.println("Backup cancelado pelo usuário");
                 return;
             }
             
@@ -312,15 +309,15 @@ public class ConfiguracoesController {
             
             Optional<ButtonType> resultado = confirmacao.showAndWait();
             if (resultado.isEmpty() || resultado.get() != ButtonType.OK) {
-                System.out.println("✗ Backup cancelado");
+                System.out.println("Backup cancelado");
                 return;
             }
             
-            System.out.println("→ Iniciando exportação para: " + backupFileName);
+            System.out.println("Iniciando exportação para: " + backupFileName);
             fazerBackupSQL(backupFile);
             
         } catch (Exception e) {
-            System.err.println("✗ Erro ao fazer backup: " + e.getMessage());
+            System.err.println("Erro ao fazer backup: " + e.getMessage());
             mostrarAlerta("Erro", "Erro ao fazer backup:\n" + e.getMessage(), 
                 Alert.AlertType.ERROR);
             e.printStackTrace();
@@ -341,18 +338,22 @@ public class ConfiguracoesController {
             writer.println();
             
             // Exportar tabelas principais
+            exportarTabela(conn, writer, "enderecos");
             exportarTabela(conn, writer, "fornecedor");
             exportarTabela(conn, writer, "produto");
             exportarTabela(conn, writer, "clientes");
-            exportarTabela(conn, writer, "enderecos");
             exportarTabela(conn, writer, "venda");
+            exportarTabela(conn, writer, "item_venda");
             exportarTabela(conn, writer, "compra");
+            exportarTabela(conn, writer, "item_compra");
+            exportarTabela(conn, writer, "movimentacao_estoque");
+            exportarTabela(conn, writer, "usuarios");
             
             writer.println("-- ========================================");
             writer.println("-- Backup finalizado com sucesso!");
             writer.println("-- ========================================");
             
-            System.out.println("✓ Backup realizado com sucesso!");
+            System.out.println("Backup realizado com sucesso!");
             
             mostrarAlerta("Sucesso", 
                 "Backup realizado com sucesso!\n\n" +
@@ -361,7 +362,7 @@ public class ConfiguracoesController {
                 Alert.AlertType.INFORMATION);
                 
         } catch (Exception e) {
-            System.err.println("✗ Erro ao exportar dados: " + e.getMessage());
+            System.err.println("Erro ao exportar dados: " + e.getMessage());
             mostrarAlerta("Erro", "Erro ao exportar dados:\n" + e.getMessage(), 
                 Alert.AlertType.ERROR);
             e.printStackTrace();
@@ -372,7 +373,7 @@ public class ConfiguracoesController {
      * Exporta dados de uma tabela
      */
     private void exportarTabela(Connection conn, PrintWriter writer, String tableName) throws Exception {
-        System.out.println("  → Exportando tabela: " + tableName);
+        System.out.println("  Exportando tabela: " + tableName);
         
         String sql = "SELECT * FROM " + tableName;
         PreparedStatement stmt = conn.prepareStatement(sql);
@@ -414,7 +415,7 @@ public class ConfiguracoesController {
         writer.println("-- Total de registros: " + count);
         writer.println();
         
-        System.out.println("    ✓ " + count + " registros exportados");
+        System.out.println("    " + count + " registros exportados");
         
         rs.close();
         stmt.close();
@@ -438,12 +439,12 @@ public class ConfiguracoesController {
             File selectedFile = fileChooser.showOpenDialog(btnRestaurarBackup.getScene().getWindow());
             
             if (selectedFile == null) {
-                System.out.println("✗ Restauração cancelada");
+                System.out.println("Restauração cancelada");
                 return;
             }
             
             Alert confirmacao = new Alert(Alert.AlertType.WARNING);
-            confirmacao.setTitle("⚠️ ATENÇÃO - OPERAÇÃO IRREVERSÍVEL");
+            confirmacao.setTitle("ATENÇÃO - OPERAÇÃO IRREVERSÍVEL");
             confirmacao.setHeaderText("Restaurar backup SUBSTITUIRÁ todos os dados atuais!");
             confirmacao.setContentText(
                 "Esta ação NÃO pode ser desfeita!\n\n" +
@@ -453,16 +454,16 @@ public class ConfiguracoesController {
             );
             
             ButtonType btnContinuar = new ButtonType("Sim, Restaurar", ButtonBar.ButtonData.OK_DONE);
-            ButtonType btnCancelar = new ButtonType("Não, Cancelar", ButtonBar.ButtonData.CANCEL_CLOSE);
-            confirmacao.getButtonTypes().setAll(btnContinuar, btnCancelar);
+            ButtonType btnCancelarRestore = new ButtonType("Não, Cancelar", ButtonBar.ButtonData.CANCEL_CLOSE);
+            confirmacao.getButtonTypes().setAll(btnContinuar, btnCancelarRestore);
             
             Optional<ButtonType> resultado = confirmacao.showAndWait();
             if (resultado.isEmpty() || resultado.get() != btnContinuar) {
-                System.out.println("✗ Restauração cancelada pelo usuário");
+                System.out.println("Restauração cancelada pelo usuário");
                 return;
             }
             
-            System.out.println("→ Restaurando de: " + selectedFile.getName());
+            System.out.println("Restaurando de: " + selectedFile.getName());
             
             mostrarAlerta("Informação", 
                 "Para restaurar o backup:\n\n" +
@@ -476,7 +477,7 @@ public class ConfiguracoesController {
                 Alert.AlertType.INFORMATION);
             
         } catch (Exception e) {
-            System.err.println("✗ Erro ao restaurar: " + e.getMessage());
+            System.err.println("Erro ao restaurar: " + e.getMessage());
             mostrarAlerta("Erro", "Erro ao restaurar backup:\n" + e.getMessage(), 
                 Alert.AlertType.ERROR);
             e.printStackTrace();
@@ -491,7 +492,6 @@ public class ConfiguracoesController {
         System.out.println("=== Salvando Configurações ===");
         
         try {
-            // Validar horários
             if (!validarHorario(txtHorarioAbertura.getText())) {
                 mostrarAlerta("Erro", "Horário de abertura inválido!\nUse o formato HH:MM (ex: 08:00)", 
                     Alert.AlertType.ERROR);
@@ -514,22 +514,23 @@ public class ConfiguracoesController {
             confirmacao.setTitle("Salvar Configurações");
             confirmacao.setHeaderText("Deseja salvar as alterações?");
             confirmacao.setContentText(
-                "✓ Configurações que serão salvas:\n\n" +
-                "• Nível de permissão: no banco erp_oficial\n" +
-                "• Horários de funcionamento: localmente\n" +
-                "• Funciona FDS: localmente\n" +
-                "• Bloquear fora do horário: localmente\n\n" +
+                "Configurações que serão salvas:\n\n" +
+                "  Nível de permissão: no banco erp_oficial\n" +
+                "  Horários de funcionamento: localmente\n" +
+                "  Funciona FDS: localmente\n" +
+                "  Bloquear fora do horário: localmente\n\n" +
                 "Nome da Empresa, CNPJ e Endereço: somente leitura"
             );
             
             Optional<ButtonType> resultado = confirmacao.showAndWait();
             if (resultado.isPresent() && resultado.get() == ButtonType.OK) {
                 
-                // REMOVIDO: Não atualiza mais o nome da empresa no banco erp_licencas
-                
-                // Salvar nível de permissão no banco erp_oficial
+                // ATUALIZADO: Salvar perfil do usuário na tabela 'usuarios' via 'perfis_acesso'
+                // Em vez da antiga: UPDATE licencas SET tipo_usuario = ? WHERE id_usuario = ?
                 Connection connOficial = DatabaseConnection.getConnectionMercado();
-                String sqlPermissao = "UPDATE licencas SET tipo_usuario = ? WHERE id_usuario = ?";
+                String sqlPermissao = "UPDATE usuarios SET id_perfil = " +
+                                    "(SELECT id_perfil FROM perfis_acesso WHERE nome = ? LIMIT 1) " +
+                                    "WHERE id_usuario = ?";
                 PreparedStatement stmtPermissao = connOficial.prepareStatement(sqlPermissao);
                 stmtPermissao.setString(1, cbNivelPermissao.getValue());
                 stmtPermissao.setInt(2, idUsuarioLogado);
@@ -543,26 +544,26 @@ public class ConfiguracoesController {
                 prefs.putBoolean(PREF_FUNCIONA_FDS, chkFuncionaFds.isSelected());
                 prefs.putBoolean(PREF_BLOQUEAR_FORA_HORARIO, chkBloquearSistemaForaHorario.isSelected());
                 
-                //Atualizar valores originais após salvar
+                // Atualizar valores originais após salvar
                 originalHorarioAbertura = txtHorarioAbertura.getText();
                 originalHorarioFechamento = txtHorarioFechamento.getText();
                 originalFuncionaFds = chkFuncionaFds.isSelected();
                 originalBloquearForaHorario = chkBloquearSistemaForaHorario.isSelected();
                 originalNivelPermissao = cbNivelPermissao.getValue();
                 
-                System.out.println("✓ Configurações salvas com sucesso!");
+                System.out.println("Configurações salvas com sucesso!");
                 
                 String mensagem = "Configurações salvas com sucesso!\n\n";
                 if (rowsPermissao > 0) {
-                    mensagem += "✓ Nível de permissão atualizado no banco\n";
+                    mensagem += "Nível de permissão atualizado no banco\n";
                 }
-                mensagem += "✓ Horários e preferências salvos localmente";
+                mensagem += "Horários e preferências salvos localmente";
                 
                 mostrarAlerta("Sucesso", mensagem, Alert.AlertType.INFORMATION);
             }
             
         } catch (Exception e) {
-            System.err.println("✗ Erro ao salvar: " + e.getMessage());
+            System.err.println("Erro ao salvar: " + e.getMessage());
             mostrarAlerta("Erro", "Erro ao salvar configurações:\n" + e.getMessage(), 
                 Alert.AlertType.ERROR);
             e.printStackTrace();
@@ -599,7 +600,6 @@ public class ConfiguracoesController {
         System.out.println("=== Cancelando Alterações ===");
         
         try {
-            // Verificar se houve alterações
             boolean houveAlteracoes = false;
             
             if (!txtHorarioAbertura.getText().equals(originalHorarioAbertura) ||
@@ -618,7 +618,7 @@ public class ConfiguracoesController {
                 
                 Optional<ButtonType> resultado = confirmacao.showAndWait();
                 if (resultado.isEmpty() || resultado.get() != ButtonType.OK) {
-                    System.out.println("✗ Cancelamento abortado pelo usuário");
+                    System.out.println("Cancelamento abortado pelo usuário");
                     return;
                 }
             }
@@ -630,7 +630,7 @@ public class ConfiguracoesController {
             chkBloquearSistemaForaHorario.setSelected(originalBloquearForaHorario);
             cbNivelPermissao.setValue(originalNivelPermissao);
             
-            System.out.println("✓ Valores restaurados para os originais");
+            System.out.println("Valores restaurados para os originais");
             
             if (houveAlteracoes) {
                 mostrarAlerta("Cancelado", 
@@ -639,7 +639,7 @@ public class ConfiguracoesController {
             }
             
         } catch (Exception e) {
-            System.err.println("✗ Erro ao cancelar: " + e.getMessage());
+            System.err.println("Erro ao cancelar: " + e.getMessage());
             e.printStackTrace();
         }
     }

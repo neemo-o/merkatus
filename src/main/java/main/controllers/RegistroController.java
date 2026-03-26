@@ -13,7 +13,9 @@ import javafx.stage.Stage;
 import main.database.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import org.springframework.stereotype.Component;
 
@@ -98,15 +100,12 @@ public class RegistroController {
     private void setupCNPJField() {
         cnpjField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
-                // Remove todos os caracteres não numéricos
                 String digits = newValue.replaceAll("\\D", "");
                 
-                // Limita a 14 dígitos
                 if (digits.length() > 14) {
                     digits = digits.substring(0, 14);
                 }
                 
-                // Formata o CNPJ: XX.XXX.XXX/XXXX-XX
                 String formatted = formatCNPJ(digits);
                 
                 if (!formatted.equals(newValue)) {
@@ -114,12 +113,10 @@ public class RegistroController {
                     cnpjField.positionCaret(formatted.length());
                 }
                 
-                // Validação visual em tempo real
                 validateCNPJVisual(digits);
             }
         });
         
-        // Remove estilo ao focar
         cnpjField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
             if (isNowFocused) {
                 cnpjField.setStyle(cnpjField.getStyle().replaceAll("-fx-border-color: [^;]+;", "-fx-border-color: #87ceeb;"));
@@ -132,7 +129,6 @@ public class RegistroController {
             if (newValue != null) {
                 String digits = newValue.replaceAll("\\D", "");
                 
-                // Limita a 11 dígitos (celular com 9)
                 if (digits.length() > 11) {
                     digits = digits.substring(0, 11);
                 }
@@ -160,7 +156,6 @@ public class RegistroController {
             if (newValue != null) {
                 String digits = newValue.replaceAll("\\D", "");
                 
-                // Limita a 8 dígitos
                 if (digits.length() > 8) {
                     digits = digits.substring(0, 8);
                 }
@@ -194,7 +189,6 @@ public class RegistroController {
     }
 
     private void setupTextFields() {
-        // Limite de caracteres para campos de texto
         razaoSocialField.textProperty().addListener((obs, old, newVal) -> {
             if (newVal != null && newVal.length() > 100) {
                 razaoSocialField.setText(old);
@@ -235,7 +229,6 @@ public class RegistroController {
     private void setupNumeroField() {
         numeroField.textProperty().addListener((obs, old, newVal) -> {
             if (newVal != null) {
-                // Permite números e algumas letras (para casos como "123-A")
                 if (newVal.length() > 10) {
                     numeroField.setText(old);
                 }
@@ -246,7 +239,6 @@ public class RegistroController {
     private void setupEstadoField() {
         estadoField.textProperty().addListener((obs, old, newVal) -> {
             if (newVal != null) {
-                // Converte para maiúsculas e limita a 2 caracteres
                 String upper = newVal.toUpperCase().replaceAll("[^A-Z]", "");
                 if (upper.length() > 2) {
                     upper = upper.substring(0, 2);
@@ -266,7 +258,6 @@ public class RegistroController {
         
         StringBuilder formatted = new StringBuilder();
         
-        // XX.XXX.XXX/XXXX-XX
         for (int i = 0; i < digits.length(); i++) {
             if (i == 2 || i == 5) {
                 formatted.append(".");
@@ -286,7 +277,6 @@ public class RegistroController {
         
         StringBuilder formatted = new StringBuilder();
         
-        // (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
         formatted.append("(");
         
         for (int i = 0; i < digits.length(); i++) {
@@ -306,7 +296,6 @@ public class RegistroController {
         
         StringBuilder formatted = new StringBuilder();
         
-        // XXXXX-XXX
         for (int i = 0; i < digits.length(); i++) {
             if (i == 5) {
                 formatted.append("-");
@@ -373,7 +362,6 @@ public class RegistroController {
         boolean valido = true;
         String mensagemErro = "";
 
-        // CNPJ
         String cnpjDigits = cnpjField.getText().replaceAll("\\D", "");
         if (cnpjDigits.isEmpty()) {
             mensagemErro = "CNPJ é obrigatório";
@@ -385,7 +373,6 @@ public class RegistroController {
             setFieldError(cnpjField);
         }
 
-        // Razão Social
         if (razaoSocialField.getText().trim().isEmpty()) {
             if (!mensagemErro.isEmpty()) mensagemErro += " | ";
             mensagemErro += "Razão Social é obrigatória";
@@ -393,7 +380,6 @@ public class RegistroController {
             setFieldError(razaoSocialField);
         }
 
-        // Email
         String email = emailField.getText().trim();
         if (email.isEmpty()) {
             if (!mensagemErro.isEmpty()) mensagemErro += " | ";
@@ -407,7 +393,6 @@ public class RegistroController {
             setFieldError(emailField);
         }
 
-        // Telefone (opcional, mas se preenchido deve ser válido)
         String telefoneDigits = telefoneField.getText().replaceAll("\\D", "");
         if (!telefoneDigits.isEmpty() && telefoneDigits.length() != 10 && telefoneDigits.length() != 11) {
             if (!mensagemErro.isEmpty()) mensagemErro += " | ";
@@ -416,7 +401,6 @@ public class RegistroController {
             setFieldError(telefoneField);
         }
 
-        // CEP (opcional, mas se preenchido deve ser válido)
         String cepDigits = cepField.getText().replaceAll("\\D", "");
         if (!cepDigits.isEmpty() && cepDigits.length() != 8) {
             if (!mensagemErro.isEmpty()) mensagemErro += " | ";
@@ -439,22 +423,19 @@ public class RegistroController {
         field.setStyle(baseStyle + " -fx-border-color: #f44336;");
     }
 
-    // ==================== CADASTRO SIMPLIFICADO ====================
+    // ==================== CADASTRO ====================
 
     @FXML
     private void handleRegistro() {
         System.out.println("=== INICIANDO CADASTRO DE EMPRESA ===");
         
-        // Limpa mensagem anterior
         statusMessage.setVisible(false);
         
-        // Valida campos
         if (!validarCampos()) {
-            System.out.println("❌ Validação falhou");
+            System.out.println("Validação falhou");
             return;
         }
 
-        // Pega valores (já formatados e validados)
         String cnpj = cnpjField.getText().trim();
         String razaoSocial = razaoSocialField.getText().trim();
         String nomeFantasia = nomeFantasiaField.getText().trim();
@@ -468,54 +449,76 @@ public class RegistroController {
         String cidade = cidadeField.getText().trim();
         String estado = estadoField.getText().trim();
 
-        System.out.println("→ Dados validados com sucesso");
-        System.out.println("→ CNPJ: " + cnpj);
-        System.out.println("→ Razão Social: " + razaoSocial);
+        System.out.println("Dados validados — CNPJ: " + cnpj);
 
         Connection db = null;
         try {
             db = DatabaseConnection.getConnectionLicenses();
             
             if (db == null) {
-                System.err.println("❌ Falha ao conectar ao banco de dados");
+                System.err.println("Falha ao conectar ao banco de dados");
                 statusMessage.setFill(javafx.scene.paint.Color.web("#f44336"));
-                statusMessage.setText("✗ Falha na conexão com o banco.");
+                statusMessage.setText("Falha na conexão com o banco.");
                 statusMessage.setVisible(true);
                 return;
             }
 
-            System.out.println("✓ Conexão estabelecida com o banco");
+            System.out.println("Conexão estabelecida com o banco");
             db.setAutoCommit(false);
 
-            // Inserir apenas na tabela licencas
-            String queryLicenca = "INSERT INTO licencas (cnpj, razao_social, nome_fantasia, inscricao_estadual, " +
-                                "telefone, e_mail, rua, numero, bairro, cidade, estado, cep, status) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PAGO')";
+            // ATUALIZADO: Inserir na tabela clientes_licenciados (substitui a antiga licencas)
+            String queryCliente = "INSERT INTO clientes_licenciados (cnpj, razao_social, nome_fantasia, " +
+                                "inscricao_estadual, telefone, email, logradouro, numero, bairro, " +
+                                "cidade, estado, cep, ativo) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)";
             
-            PreparedStatement stmtLicenca = db.prepareStatement(queryLicenca);
-            stmtLicenca.setString(1, cnpj);
-            stmtLicenca.setString(2, razaoSocial);
-            stmtLicenca.setString(3, nomeFantasia.isEmpty() ? null : nomeFantasia);
-            stmtLicenca.setString(4, inscricaoEstadual.isEmpty() ? null : inscricaoEstadual);
-            stmtLicenca.setString(5, telefone.isEmpty() ? null : telefone);
-            stmtLicenca.setString(6, email);
-            stmtLicenca.setString(7, rua.isEmpty() ? null : rua);
-            stmtLicenca.setString(8, numero.isEmpty() ? null : numero);
-            stmtLicenca.setString(9, bairro.isEmpty() ? null : bairro);
-            stmtLicenca.setString(10, cidade.isEmpty() ? null : cidade);
-            stmtLicenca.setString(11, estado.isEmpty() ? null : estado);
-            stmtLicenca.setString(12, cep.isEmpty() ? null : cep);
+            PreparedStatement stmtCliente = db.prepareStatement(queryCliente, Statement.RETURN_GENERATED_KEYS);
+            stmtCliente.setString(1, cnpj);
+            stmtCliente.setString(2, razaoSocial);
+            stmtCliente.setString(3, nomeFantasia.isEmpty() ? null : nomeFantasia);
+            stmtCliente.setString(4, inscricaoEstadual.isEmpty() ? null : inscricaoEstadual);
+            stmtCliente.setString(5, telefone.isEmpty() ? null : telefone);
+            stmtCliente.setString(6, email);
+            stmtCliente.setString(7, rua.isEmpty() ? null : rua);
+            stmtCliente.setString(8, numero.isEmpty() ? null : numero);
+            stmtCliente.setString(9, bairro.isEmpty() ? null : bairro);
+            stmtCliente.setString(10, cidade.isEmpty() ? null : cidade);
+            stmtCliente.setString(11, estado.isEmpty() ? null : estado);
+            stmtCliente.setString(12, cep.isEmpty() ? null : cep);
 
-            System.out.println("→ Executando INSERT na tabela licencas...");
-            int licencaRows = stmtLicenca.executeUpdate();
-            stmtLicenca.close();
+            System.out.println("Executando INSERT em clientes_licenciados...");
+            int clienteRows = stmtCliente.executeUpdate();
 
-            if (licencaRows > 0) {
+            if (clienteRows > 0) {
+                // Recuperar o ID do cliente inserido
+                ResultSet generatedKeys = stmtCliente.getGeneratedKeys();
+                int idCliente = 0;
+                if (generatedKeys.next()) {
+                    idCliente = generatedKeys.getInt(1);
+                }
+                generatedKeys.close();
+                stmtCliente.close();
+
+                // NOVO: Criar a licença para este cliente (padrão: 1 PDV, 1 Gerenciador, 1 ano)
+                String queryLicenca = "INSERT INTO licencas (id_cliente, chave_ativacao, " +
+                                    "qtd_pdv_incluso, qtd_gerenciador_incluso, qtd_pdv_total, " +
+                                    "qtd_gerenciador_total, data_validade, status) " +
+                                    "VALUES (?, ?, 1, 1, 1, 1, CURRENT_DATE + INTERVAL '1 year', 'ATIVA')";
+                
+                // Gerar chave de ativação simples (TODO: melhorar geração de chave)
+                String chaveAtivacao = java.util.UUID.randomUUID().toString().substring(0, 20).toUpperCase();
+
+                PreparedStatement stmtLicenca = db.prepareStatement(queryLicenca);
+                stmtLicenca.setInt(1, idCliente);
+                stmtLicenca.setString(2, chaveAtivacao);
+                stmtLicenca.executeUpdate();
+                stmtLicenca.close();
+
                 db.commit();
-                System.out.println("✅ CADASTRO REALIZADO COM SUCESSO!");
+                System.out.println("CADASTRO REALIZADO COM SUCESSO!");
                 
                 statusMessage.setFill(javafx.scene.paint.Color.web("#4caf50"));
-                statusMessage.setText("✓ Cadastro realizado com sucesso!");
+                statusMessage.setText("Cadastro realizado com sucesso!");
                 statusMessage.setVisible(true);
 
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -524,12 +527,13 @@ public class RegistroController {
                 alert.setContentText(
                     "Sua empresa foi cadastrada no sistema.\n\n" +
                     "CNPJ: " + cnpj + "\n" +
-                    "Razão Social: " + razaoSocial + "\n\n" +
+                    "Razão Social: " + razaoSocial + "\n" +
+                    "Chave de Ativação: " + chaveAtivacao + "\n\n" +
+                    "Guarde a chave de ativação! Ela será usada para ativar o sistema.\n\n" +
                     "Você já pode fazer login no sistema usando seu CNPJ."
                 );
                 alert.showAndWait();
 
-                // Redirecionar para tela de login após 2 segundos
                 Platform.runLater(() -> {
                     try {
                         Thread.sleep(500);
@@ -540,34 +544,32 @@ public class RegistroController {
                 });
 
             } else {
+                stmtCliente.close();
                 db.rollback();
-                System.err.println("❌ Erro: Nenhuma linha foi inserida");
+                System.err.println("Erro: Nenhuma linha foi inserida");
                 statusMessage.setFill(javafx.scene.paint.Color.web("#f44336"));
-                statusMessage.setText("✗ Erro ao cadastrar empresa.");
+                statusMessage.setText("Erro ao cadastrar empresa.");
                 statusMessage.setVisible(true);
             }
 
         } catch (SQLException e) {
-            System.err.println("❌ ERRO SQL:");
-            System.err.println("   Mensagem: " + e.getMessage());
-            System.err.println("   Código: " + e.getErrorCode());
-            System.err.println("   Estado SQL: " + e.getSQLState());
+            System.err.println("ERRO SQL: " + e.getMessage());
             e.printStackTrace();
             
             if (db != null) {
                 try {
                     db.rollback();
-                    System.out.println("→ Rollback executado");
+                    System.out.println("Rollback executado");
                 } catch (SQLException rollbackEx) {
-                    System.err.println("✗ Erro no rollback: " + rollbackEx.getMessage());
+                    System.err.println("Erro no rollback: " + rollbackEx.getMessage());
                 }
             }
             
             String errorMsg = e.getMessage();
             if (errorMsg.contains("duplicate key") || errorMsg.contains("já existe")) {
-                statusMessage.setText("✗ CNPJ já cadastrado no sistema");
+                statusMessage.setText("CNPJ já cadastrado no sistema");
             } else {
-                statusMessage.setText("✗ Erro: " + e.getMessage());
+                statusMessage.setText("Erro: " + e.getMessage());
             }
             statusMessage.setFill(javafx.scene.paint.Color.web("#f44336"));
             statusMessage.setVisible(true);
@@ -577,9 +579,9 @@ public class RegistroController {
                 try {
                     db.setAutoCommit(true);
                     db.close();
-                    System.out.println("→ Conexão fechada");
+                    System.out.println("Conexão fechada");
                 } catch (SQLException closeEx) {
-                    System.err.println("✗ Erro ao fechar conexão: " + closeEx.getMessage());
+                    System.err.println("Erro ao fechar conexão: " + closeEx.getMessage());
                 }
             }
         }

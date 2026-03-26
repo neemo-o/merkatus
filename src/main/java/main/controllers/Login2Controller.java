@@ -56,35 +56,47 @@ public class Login2Controller {
     }
 
     private boolean authenticateUser(Integer username, String password) {
-        // TODO: Implement database authentication logic
-
         try {
-
             Connection db = DatabaseConnection.getConnectionMercado();
 
             if (db != null) {
 
-                // Verifica se o ID do usuario existe
-
-                String query = "SELECT * FROM licencas WHERE id_usuario = ?";
+                // ATUALIZADO: agora consulta tabela 'usuarios' em vez de 'licencas'
+                String query = "SELECT * FROM usuarios WHERE id_usuario = ? AND ativo = TRUE";
                 PreparedStatement stmt = db.prepareStatement(query);
 
                 stmt.setInt(1, username);
                 ResultSet rs = stmt.executeQuery();
 
                 if (rs.next()) {
-                    String dbPassword = rs.getString("senha_usuario");
+                    // ATUALIZADO: campo agora é 'senha_hash' em vez de 'senha_usuario'
+                    String dbPassword = rs.getString("senha_hash");
 
+                    // TODO: Quando implementar hash de verdade (bcrypt/argon2),
+                    // substituir esta comparação por BCrypt.checkpw(password, dbPassword)
                     if (dbPassword.equals(password)) {
                         statusMessage.setText("Login realizado com sucesso!");
                         statusMessage.setVisible(true);
+
+                        // Verificar se usuário está bloqueado
+                        if (rs.getBoolean("bloqueado")) {
+                            statusMessage.setText("Usuário bloqueado. Contate o administrador.");
+                            statusMessage.setVisible(true);
+                            return false;
+                        }
+
                         return true;
                     } else {
                         statusMessage.setText("Credenciais inválidas.");
                         statusMessage.setVisible(true);
                     }
+                } else {
+                    statusMessage.setText("Usuário não encontrado ou inativo.");
+                    statusMessage.setVisible(true);
                 }
 
+                rs.close();
+                stmt.close();
             }
 
         } catch (SQLException e) {
@@ -124,7 +136,7 @@ public class Login2Controller {
                     if (loginButton.getScene() != null && loginButton.getScene().getWindow() != null) {
                         Stage stage = (Stage) loginButton.getScene().getWindow();
                         stage.setScene(scene);
-                        stage.setResizable(false);  // Prevent resizing on all OS
+                        stage.setResizable(false);
                         stage.show();
                     } else {
                         statusMessage.setText("Erro: Janela não está disponível.");
@@ -151,14 +163,13 @@ public class Login2Controller {
             Parent root = loader.load();
             Scene scene = new Scene(root);
 
-            // Verificação segura para evitar NullPointerException
             if (loginButton.getScene() != null && loginButton.getScene().getWindow() != null) {
                 Stage stage = (Stage) loginButton.getScene().getWindow();
                 stage.setResizable(false);
                 stage.centerOnScreen();
                 stage.setScene(scene);
             
-            stage.setMaximized(true);
+                stage.setMaximized(true);
                 stage.show();
             } else {
                 statusMessage.setText("Erro: Janela não está disponível.");
@@ -172,17 +183,15 @@ public class Login2Controller {
 
     @FXML
     private void handleCloseButton() {
-        // Verificação segura para evitar NullPointerException
         if (loginButton1.getScene() != null && loginButton1.getScene().getWindow() != null) {
             Stage stage = (Stage) loginButton1.getScene().getWindow();
             stage.close();
         } else {
-            // Fallback: sair da aplicação completamente
             System.exit(0);
         }
     }
 
-     @FXML
+    @FXML
     private void handleMousePressed(javafx.scene.input.MouseEvent event) {
         xOffset = event.getSceneX();
         yOffset = event.getSceneY();
