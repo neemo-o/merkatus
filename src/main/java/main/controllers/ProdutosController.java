@@ -26,9 +26,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.stereotype.Component;
-
-@Component
 public class ProdutosController {
 
     @FXML private TextField searchField;

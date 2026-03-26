@@ -21,9 +21,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.springframework.stereotype.Component;
-
-@Component
 public class RelatoriosController {
 
     // Filtros
