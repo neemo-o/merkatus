@@ -199,6 +199,8 @@ public class VendasController {
                         listSugestoesProdutos.setVisible(false);
                         txtCodigoBarras.requestFocus();
                         break;
+                    default:
+                        break;
                 }
             });
         } else {
@@ -233,6 +235,8 @@ public class VendasController {
                     case ESCAPE:
                         event.consume();
                         listSugestoesProdutos.setVisible(false);
+                        break;
+                    default:
                         break;
                 }
             }
@@ -357,6 +361,8 @@ public class VendasController {
                             tableItens.refresh();
                             atualizarTotais();
                         }
+                        break;
+                    default:
                         break;
                 }
             }

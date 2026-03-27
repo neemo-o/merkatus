@@ -130,7 +130,6 @@ public class FornecedoresController {
             }
         });
 
-        // Máscara CEP - CORREÇÃO: Formato correto para o banco (XXXXX-XXX)
         txtCep.textProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal == null || newVal.isEmpty()) return;
             String numbers = newVal.replaceAll("[^0-9]", "");
@@ -539,7 +538,6 @@ public class FornecedoresController {
         fornecedor.setTelefone(extrairNumeros(getTextSafe(txtTelefone)));
         fornecedor.setEmail(getTextSafe(txtEmail).trim().isEmpty() ? null : getTextSafe(txtEmail).trim());
 
-        // CORREÇÃO: Criar endereço com CEP formatado corretamente (XXXXX-XXX)
         String cepFormatado = getTextSafe(txtCep).trim();
         String cepNumeros = extrairNumeros(cepFormatado);
         if (cepNumeros.length() == 8) {

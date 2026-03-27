@@ -2,10 +2,7 @@ package main.controllers;
 
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.scene.layout.StackPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import main.database.DatabaseConnection;
@@ -36,7 +33,7 @@ public class ConfiguracoesController {
     @FXML private Button btnCancelar;
     @FXML private Button btnTestarBloqueio;
     
-    private int idUsuarioLogado = 1; // TODO: Ajustar para pegar o ID do usuário logado
+    private int idUsuarioLogado = 1; 
 
     // Preferências locais para salvar configurações
     private Preferences prefs = Preferences.userNodeForPackage(ConfiguracoesController.class);

@@ -103,7 +103,6 @@ public class RegistroController {
                     digits = digits.substring(0, 14);
                 }
                 
-                // Formata o CNPJ: XX.XXX.XXX/XXXX-XX
                 String formatted = formatCNPJ(digits);
                 
                 if (!formatted.equals(newValue)) {
@@ -263,7 +262,6 @@ public class RegistroController {
         
         StringBuilder formatted = new StringBuilder();
         
-        // XX.XXX.XXX/XXXX-XX
         for (int i = 0; i < digits.length(); i++) {
             if (i == 2 || i == 5) {
                 formatted.append(".");
@@ -303,7 +301,6 @@ public class RegistroController {
         
         StringBuilder formatted = new StringBuilder();
         
-        // XXXXX-XXX
         for (int i = 0; i < digits.length(); i++) {
             if (i == 5) {
                 formatted.append("-");
