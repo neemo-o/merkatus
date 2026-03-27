@@ -22,24 +22,23 @@ public class Login2Controller {
     private double yOffset = 0;
 
     @FXML
-    private TextField usernameField;
+    private TextField documentField1;
 
     @FXML
-    private PasswordField passwordField;
+    private PasswordField documentField11;
 
     @FXML
     private Button loginButton;
 
     @FXML
-    private Button loginButton1; // Botão Fechar
+    private Button minimizeButton;
 
     @FXML
     private Text statusMessage;
 
     @FXML
     public void initialize() {
-
-       usernameField.sceneProperty().addListener((obs, oldScene, newScene) -> {
+        documentField1.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
                 Stage stage = (Stage) newScene.getWindow();
                 if (stage != null) {
@@ -53,19 +52,12 @@ public class Login2Controller {
     }
 
     private boolean authenticateUser(Integer username, String password) {
-        // TODO: Implement database authentication logic
-
         try {
-
             Connection db = DatabaseConnection.getConnectionMercado();
 
             if (db != null) {
-
-                // Verifica se o ID do usuario existe
-
                 String query = "SELECT * FROM licencas WHERE id_usuario = ?";
                 PreparedStatement stmt = db.prepareStatement(query);
-
                 stmt.setInt(1, username);
                 ResultSet rs = stmt.executeQuery();
 
@@ -81,7 +73,6 @@ public class Login2Controller {
                         statusMessage.setVisible(true);
                     }
                 }
-
             }
 
         } catch (SQLException e) {
@@ -94,8 +85,8 @@ public class Login2Controller {
 
     @FXML
     private void handleLoginButton() {
-        String username = usernameField.getText().trim();
-        String password = passwordField.getText().trim();
+        String username = documentField1.getText().trim();
+        String password = documentField11.getText().trim();
 
         if (username.isEmpty()) {
             statusMessage.setText("Nome de usuário não pode estar vazio.");
@@ -108,7 +99,7 @@ public class Login2Controller {
             statusMessage.setVisible(true);
             return;
         }
-        
+
         try {
             Integer userId = Integer.parseInt(username);
 
@@ -121,7 +112,7 @@ public class Login2Controller {
                     if (loginButton.getScene() != null && loginButton.getScene().getWindow() != null) {
                         Stage stage = (Stage) loginButton.getScene().getWindow();
                         stage.setScene(scene);
-                        stage.setResizable(false);  // Prevent resizing on all OS
+                        stage.setResizable(false);
                         stage.show();
                     } else {
                         statusMessage.setText("Erro: Janela não está disponível.");
@@ -137,49 +128,35 @@ public class Login2Controller {
         } catch (NumberFormatException e) {
             statusMessage.setText("ID de usuário inválido.");
             statusMessage.setVisible(true);
-            return;
-        }
-    }
-
-    @FXML
-    private void handleMainScreenLink() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/main/view/MainScreen.fxml"));
-            Parent root = loader.load();
-            Scene scene = new Scene(root);
-
-            // Verificação segura para evitar NullPointerException
-            if (loginButton.getScene() != null && loginButton.getScene().getWindow() != null) {
-                Stage stage = (Stage) loginButton.getScene().getWindow();
-                stage.setResizable(false);
-                stage.centerOnScreen();
-                stage.setScene(scene);
-            
-            stage.setMaximized(true);
-                stage.show();
-            } else {
-                statusMessage.setText("Erro: Janela não está disponível.");
-                statusMessage.setVisible(true);
-            }
-        } catch (Exception e) {
-            statusMessage.setText("Erro ao voltar para login: " + e.getMessage());
-            statusMessage.setVisible(true);
         }
     }
 
     @FXML
     private void handleCloseButton() {
-        // Verificação segura para evitar NullPointerException
-        if (loginButton1.getScene() != null && loginButton1.getScene().getWindow() != null) {
-            Stage stage = (Stage) loginButton1.getScene().getWindow();
+        Stage stage = null;
+
+        if (loginButton != null && loginButton.getScene() != null) {
+            stage = (Stage) loginButton.getScene().getWindow();
+        } else if (minimizeButton != null && minimizeButton.getScene() != null) {
+            stage = (Stage) minimizeButton.getScene().getWindow();
+        }
+
+        if (stage != null) {
             stage.close();
         } else {
-            // Fallback: sair da aplicação completamente
             System.exit(0);
         }
     }
 
-     @FXML
+    @FXML
+    private void handleMinimize() {
+        if (minimizeButton.getScene() != null && minimizeButton.getScene().getWindow() != null) {
+            Stage stage = (Stage) minimizeButton.getScene().getWindow();
+            stage.setIconified(true);
+        }
+    }
+
+    @FXML
     private void handleMousePressed(javafx.scene.input.MouseEvent event) {
         xOffset = event.getSceneX();
         yOffset = event.getSceneY();
@@ -191,5 +168,4 @@ public class Login2Controller {
         stage.setX(event.getScreenX() - xOffset);
         stage.setY(event.getScreenY() - yOffset);
     }
-
 }

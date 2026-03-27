@@ -7,7 +7,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextFormatter;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import main.database.DatabaseConnection;
@@ -15,7 +14,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.function.UnaryOperator;
 
 public class AuthController {
 
@@ -51,7 +49,6 @@ public class AuthController {
                 numbers = numbers.substring(0, 14);
             }
             
-            // Formata o CNPJ: XX.XXX.XXX/XXXX-XX
             String formatted = formatCNPJ(numbers);
             
             // Atualiza o campo apenas se o texto formatado for diferente
@@ -74,7 +71,6 @@ public class AuthController {
         }
 
         
-        // Validar formato básico do CNPJ (exemplo: XX.XXX.XXX/XXXX-XX)
         if (!doc.matches("\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}")) {
             statusMessage.setText("Formato de CNPJ inválido. Use: XX.XXX.XXX/XXXX-XX");
             statusMessage.setVisible(true);
