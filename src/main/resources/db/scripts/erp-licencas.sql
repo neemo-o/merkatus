@@ -1,4 +1,4 @@
--- Active: 1762899015081@@127.0.0.1@5432@erp_licencas
+-- Active: 1761779476832@@127.0.0.1@5432@erp_licencas
 
 #   RODE O SCRIPT DEPOIS DE CRIAR A DATABASE COM O ESTE COMANDO ISOLADO
 #   CREATE DATABASE erp_licencas;
@@ -17,8 +17,6 @@ CREATE TABLE IF NOT EXISTS clientes_licenciados (
     telefone            VARCHAR(20),
     email               VARCHAR(255),
     responsavel         VARCHAR(100),
- 
-    -- Endereço inline (não precisa de tabela separada aqui)
     logradouro          VARCHAR(255),
     numero              VARCHAR(10),
     complemento         VARCHAR(255),
@@ -26,7 +24,6 @@ CREATE TABLE IF NOT EXISTS clientes_licenciados (
     cidade              VARCHAR(100),
     estado              VARCHAR(2),
     cep                 VARCHAR(10),
- 
     observacoes         TEXT,
     ativo               BOOLEAN NOT NULL DEFAULT TRUE,
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -41,7 +38,6 @@ CREATE TABLE IF NOT EXISTS licencas (
     id_licenca                  SERIAL PRIMARY KEY,
     id_cliente                  INTEGER NOT NULL REFERENCES clientes_licenciados(id_cliente) ON DELETE RESTRICT,
     chave_ativacao              VARCHAR(100) UNIQUE NOT NULL,
- 
     -- Capacidade
     qtd_pdv_incluso             SMALLINT NOT NULL DEFAULT 1,
     qtd_gerenciador_incluso     SMALLINT NOT NULL DEFAULT 1,
@@ -49,16 +45,13 @@ CREATE TABLE IF NOT EXISTS licencas (
     qtd_gerenciador_adicional   SMALLINT NOT NULL DEFAULT 0,
     qtd_pdv_total               SMALLINT NOT NULL DEFAULT 1,
     qtd_gerenciador_total       SMALLINT NOT NULL DEFAULT 1,
- 
     -- Validade
     data_ativacao               DATE,
     data_validade               DATE NOT NULL,
     status                      VARCHAR(15) NOT NULL DEFAULT 'ATIVA'
                                     CHECK (status IN ('ATIVA', 'EXPIRADA', 'SUSPENSA', 'CANCELADA')),
- 
     -- Segurança
     hash_validacao              VARCHAR(255),
- 
     data_cadastro               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -79,7 +72,6 @@ CREATE TABLE IF NOT EXISTS terminais_autorizados (
     ultimo_heartbeat        TIMESTAMP,
     data_cadastro           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
- 
     -- Uma máquina só pode ser registrada uma vez por licença
     CONSTRAINT uq_licenca_maquina UNIQUE (id_licenca, identificador_maquina)
 );
@@ -100,7 +92,6 @@ CREATE TABLE IF NOT EXISTS validacoes_licenca (
     dados_retornados        TEXT, -- JSON com pacote retornado ao local
     data_validacao          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
 -- ========================================
 -- TABELA: usuarios_equipe
 -- Usuários da equipe de gestão (vocês).

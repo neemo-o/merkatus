@@ -1,4 +1,4 @@
--- Active: 1762899015081@@127.0.0.1@5432@erp_oficial
+-- Active: 1761779476832@@127.0.0.1@5432@erp_oficial
 
 #   RODE O SCRIPT DEPOIS DE CRIAR A DATABASE COM O ESTE COMANDO ISOLADO
 #   CREATE DATABASE erp_oficial;
@@ -13,11 +13,9 @@ CREATE TABLE IF NOT EXISTS empresa (
     cnpj                VARCHAR(18) UNIQUE NOT NULL,
     inscricao_estadual  VARCHAR(20),
     inscricao_municipal VARCHAR(20),
- 
     -- Tributação
     regime_tributario    SMALLINT NOT NULL DEFAULT 1, -- 1=Simples, 2=Presumido, 3=Real
     crt                  SMALLINT NOT NULL DEFAULT 1, -- Código Regime Tributário
- 
     -- Endereço
     logradouro          VARCHAR(200),
     numero              VARCHAR(10),
@@ -27,16 +25,13 @@ CREATE TABLE IF NOT EXISTS empresa (
     uf                  VARCHAR(2),
     cep                 VARCHAR(10),
     cod_municipio_ibge  VARCHAR(7),
- 
     -- Contato
     telefone            VARCHAR(20),
     email               VARCHAR(120),
- 
     -- Certificado digital (NF-e)
     logo                BYTEA,
     certificado_digital BYTEA,
     senha_certificado   VARCHAR(100), -- criptografada
- 
     -- NF-e / NFC-e
     ambiente_nfe        SMALLINT NOT NULL DEFAULT 2, -- 1=Produção, 2=Homologação
     serie_nfce          SMALLINT NOT NULL DEFAULT 1,
@@ -45,13 +40,10 @@ CREATE TABLE IF NOT EXISTS empresa (
     proximo_nfe         INTEGER NOT NULL DEFAULT 1,
     token_csc           VARCHAR(100),
     id_csc              VARCHAR(10),
- 
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
 COMMENT ON TABLE empresa IS 'Singleton — dados da empresa dona deste banco local';
- 
 -- ========================================
 -- 2. LICENÇA LOCAL (singleton — cache do banco principal)
 -- ========================================
@@ -71,9 +63,7 @@ CREATE TABLE IF NOT EXISTS licenca_local (
     dados_licenca_json      TEXT,      -- JSON completo recebido do principal
     data_atualizacao        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
 COMMENT ON TABLE licenca_local IS 'Cache local da licença obtida do banco principal. Singleton.';
- 
 -- ========================================
 -- 3. ENDEREÇOS (compartilhado por clientes e fornecedores)
 -- ========================================
@@ -88,9 +78,7 @@ CREATE TABLE IF NOT EXISTS enderecos (
     cep             VARCHAR(9) NOT NULL,
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
 COMMENT ON TABLE enderecos IS 'Endereços compartilhados por clientes e fornecedores';
- 
 -- ========================================
 -- 4. FORNECEDOR
 -- ========================================
@@ -106,9 +94,7 @@ CREATE TABLE IF NOT EXISTS fornecedor (
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
 COMMENT ON TABLE fornecedor IS 'Cadastro de fornecedores';
- 
 -- ========================================
 -- 5. CATEGORIAS (hierárquica)
 -- ========================================
@@ -119,9 +105,7 @@ CREATE TABLE IF NOT EXISTS categorias (
     ativo           BOOLEAN NOT NULL DEFAULT TRUE,
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
 COMMENT ON TABLE categorias IS 'Categorias de produtos (hierárquica via parent_id)';
- 
 -- ========================================
 -- 6. UNIDADES DE MEDIDA
 -- ========================================
@@ -130,9 +114,7 @@ CREATE TABLE IF NOT EXISTS unidades_medida (
     sigla       VARCHAR(6) UNIQUE NOT NULL,
     descricao   VARCHAR(50) NOT NULL
 );
- 
 COMMENT ON TABLE unidades_medida IS 'Unidades de medida (UN, KG, LT, CX, etc.)';
- 
 -- Dados iniciais
 INSERT INTO unidades_medida (sigla, descricao) VALUES
     ('UN', 'Unidade'),
@@ -146,7 +128,6 @@ INSERT INTO unidades_medida (sigla, descricao) VALUES
     ('DZ', 'Dúzia'),
     ('MT', 'Metro')
 ON CONFLICT DO NOTHING;
- 
 -- ========================================
 -- 7. PRODUTO
 -- Mantém compatibilidade com ProdutoDAO existente.
@@ -166,7 +147,6 @@ CREATE TABLE IF NOT EXISTS produto (
     estoque_minimo      DECIMAL(12, 3),
     estoque_maximo      DECIMAL(12, 3),
     id_fornecedor       INTEGER REFERENCES fornecedor(id_fornecedor) ON DELETE SET NULL,
- 
     -- Campos fiscais (para uso futuro — nullable por enquanto)
     ncm                 VARCHAR(8),
     cest                VARCHAR(7),
@@ -180,7 +160,6 @@ CREATE TABLE IF NOT EXISTS produto (
     aliq_pis            DECIMAL(5, 4),
     aliq_cofins         DECIMAL(5, 4),
     aliq_ipi            DECIMAL(5, 2),
- 
     -- Flags
     peso_liquido            DECIMAL(10, 3),
     peso_bruto              DECIMAL(10, 3),
@@ -188,13 +167,10 @@ CREATE TABLE IF NOT EXISTS produto (
     controla_estoque        BOOLEAN NOT NULL DEFAULT TRUE,
     balanca                 BOOLEAN NOT NULL DEFAULT FALSE,
     ativo                   BOOLEAN NOT NULL DEFAULT TRUE,
- 
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
 COMMENT ON TABLE produto IS 'Cadastro de produtos — campos fiscais preparados para NF-e futura';
- 
 -- ========================================
 -- 8. TABELAS DE PREÇO
 -- ========================================
@@ -206,7 +182,6 @@ CREATE TABLE IF NOT EXISTS tabelas_preco (
     ativo           BOOLEAN NOT NULL DEFAULT TRUE,
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
 CREATE TABLE IF NOT EXISTS tabelas_preco_itens (
     id_item         SERIAL PRIMARY KEY,
     id_tabela       INTEGER NOT NULL REFERENCES tabelas_preco(id_tabela) ON DELETE CASCADE,
@@ -214,7 +189,6 @@ CREATE TABLE IF NOT EXISTS tabelas_preco_itens (
     preco           DECIMAL(12, 4) NOT NULL CHECK (preco >= 0),
     CONSTRAINT uq_tabela_produto UNIQUE (id_tabela, id_produto)
 );
- 
 -- ========================================
 -- 9. CLIENTES
 -- Mantém compatibilidade com ClienteDAO existente.
@@ -237,9 +211,7 @@ CREATE TABLE IF NOT EXISTS clientes (
     data_cadastro           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
 COMMENT ON TABLE clientes IS 'Cadastro de clientes — PK é cnpj por compatibilidade com DAO existente';
- 
 -- ========================================
 -- 10. FUNCIONÁRIOS
 -- ========================================
@@ -255,8 +227,7 @@ CREATE TABLE IF NOT EXISTS funcionarios (
     ativo           BOOLEAN NOT NULL DEFAULT TRUE,
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
- 
+); 
 -- ========================================
 -- 11. ESTOQUE (saldo por produto)
 -- ========================================
@@ -267,9 +238,7 @@ CREATE TABLE IF NOT EXISTS estoque (
     custo_medio     DECIMAL(12, 4),
     data_atualizacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
 COMMENT ON TABLE estoque IS 'Saldo consolidado de estoque por produto';
- 
 -- ========================================
 -- 12. MOVIMENTAÇÃO DE ESTOQUE
 -- Mantém compatibilidade com tabela existente.
@@ -287,7 +256,6 @@ CREATE TABLE IF NOT EXISTS movimentacao_estoque (
     data_movimento  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
 -- ========================================
 -- 13. CONFIGURAÇÃO FISCAL (singleton)
 -- ========================================
@@ -304,9 +272,9 @@ CREATE TABLE IF NOT EXISTS config_fiscal (
     cst_cofins_padrao       VARCHAR(2),
     data_atualizacao        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 COMMENT ON TABLE config_fiscal IS 'Configurações fiscais padrão da empresa — singleton';
- 
+
 -- ========================================
 -- 14. CFOP (tabela de referência)
 -- ========================================
@@ -316,9 +284,9 @@ CREATE TABLE IF NOT EXISTS cfop_cadastro (
     descricao       VARCHAR(300) NOT NULL,
     tipo_operacao   CHAR(1) NOT NULL CHECK (tipo_operacao IN ('E', 'S')) -- E=Entrada, S=Saída
 );
- 
+
 COMMENT ON TABLE cfop_cadastro IS 'Tabela de referência de CFOPs';
- 
+
 -- ========================================
 -- 15. PERFIS DE ACESSO
 -- ========================================
@@ -330,7 +298,7 @@ CREATE TABLE IF NOT EXISTS perfis_acesso (
     ativo           BOOLEAN NOT NULL DEFAULT TRUE,
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- Dados iniciais
 INSERT INTO perfis_acesso (nome, descricao, nivel) VALUES
     ('Administrador', 'Acesso total ao sistema', 1),
@@ -338,7 +306,7 @@ INSERT INTO perfis_acesso (nome, descricao, nivel) VALUES
     ('Operador', 'Operador de caixa', 5),
     ('Fiscal', 'Acesso fiscal e tributário', 3)
 ON CONFLICT DO NOTHING;
- 
+
 -- ========================================
 -- 16. MÓDULOS DO SISTEMA
 -- ========================================
@@ -348,7 +316,7 @@ CREATE TABLE IF NOT EXISTS modulos_sistema (
     nome        VARCHAR(60) NOT NULL,
     descricao   VARCHAR(200)
 );
- 
+
 INSERT INTO modulos_sistema (codigo, nome) VALUES
     ('PDV', 'Frente de Caixa'),
     ('CADASTROS', 'Cadastros Gerais'),
@@ -359,7 +327,7 @@ INSERT INTO modulos_sistema (codigo, nome) VALUES
     ('CONFIG', 'Configurações do Sistema'),
     ('USUARIOS', 'Gestão de Usuários')
 ON CONFLICT DO NOTHING;
- 
+
 -- ========================================
 -- 17. OPERAÇÕES DO SISTEMA
 -- ========================================
@@ -371,7 +339,7 @@ CREATE TABLE IF NOT EXISTS operacoes_sistema (
     descricao   VARCHAR(200),
     critica     BOOLEAN NOT NULL DEFAULT FALSE
 );
- 
+
 -- ========================================
 -- 18. PERMISSÕES (perfil × operação)
 -- ========================================
@@ -382,7 +350,7 @@ CREATE TABLE IF NOT EXISTS permissoes (
     permitido       BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT uq_perfil_operacao UNIQUE (id_perfil, id_operacao)
 );
- 
+
 -- ========================================
 -- 19. USUÁRIOS DO SISTEMA LOCAL
 -- Substitui a tabela "licencas" antiga que era usada como usuários.
@@ -402,16 +370,16 @@ CREATE TABLE IF NOT EXISTS usuarios (
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 COMMENT ON TABLE usuarios IS 'Usuários do sistema local — substitui a antiga tabela licencas (usuários)';
- 
+
 -- Usuário admin padrão (senha: trocar após primeiro login)
 INSERT INTO usuarios (id_perfil, login, senha_hash, nome_exibicao)
 VALUES (1, 'admin', '123456', 'Administrador')
 ON CONFLICT DO NOTHING;
 -- ATENÇÃO: senha em texto simples por compatibilidade temporária.
 -- Quando implementar Hibernate + bcrypt, migrar para hash real.
- 
+
 -- ========================================
 -- 20. TERMINAIS
 -- ========================================
@@ -428,9 +396,9 @@ CREATE TABLE IF NOT EXISTS terminais (
     data_cadastro           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 COMMENT ON TABLE terminais IS 'Terminais locais — validados contra licenca_local';
- 
+
 -- ========================================
 -- 21. SESSÕES
 -- ========================================
@@ -444,7 +412,7 @@ CREATE TABLE IF NOT EXISTS sessoes (
     data_fim        TIMESTAMP,
     ativa           BOOLEAN NOT NULL DEFAULT TRUE
 );
- 
+
 -- ========================================
 -- 22. FORMAS DE PAGAMENTO
 -- Expande o antigo CHECK de forma_pagamento.
@@ -460,7 +428,7 @@ CREATE TABLE IF NOT EXISTS formas_pagamento (
     ativo               BOOLEAN NOT NULL DEFAULT TRUE,
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- Dados iniciais (compatibilidade com valores antigos)
 INSERT INTO formas_pagamento (descricao, tipo, cod_pagamento_nfe, permite_troco) VALUES
     ('Dinheiro', 'DINHEIRO', '01', TRUE),
@@ -468,7 +436,7 @@ INSERT INTO formas_pagamento (descricao, tipo, cod_pagamento_nfe, permite_troco)
     ('Cartão de Débito', 'DEBITO', '04', FALSE),
     ('PIX', 'PIX', '17', FALSE)
 ON CONFLICT DO NOTHING;
- 
+
 -- ========================================
 -- 23. CAIXAS (abertura/fechamento de turno)
 -- ========================================
@@ -488,7 +456,7 @@ CREATE TABLE IF NOT EXISTS caixas (
     id_supervisor_fechamento    INTEGER REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
     data_cadastro               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- ========================================
 -- 24. SANGRIAS E SUPRIMENTOS
 -- ========================================
@@ -502,7 +470,7 @@ CREATE TABLE IF NOT EXISTS sangrias_suprimentos (
     id_supervisor           INTEGER REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
     data_cadastro           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- ========================================
 -- 25. VENDA
 -- Mantém compatibilidade com VendasDAO existente.
@@ -528,9 +496,9 @@ CREATE TABLE IF NOT EXISTS venda (
     observacao          TEXT,
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 COMMENT ON TABLE venda IS 'Vendas — campo forma_pagamento mantido por compatibilidade, usar vendas_pagamentos para múltiplas formas';
- 
+
 -- ========================================
 -- 26. ITEM_VENDA
 -- Mantém compatibilidade com ItemVendaDAO existente.
@@ -546,7 +514,6 @@ CREATE TABLE IF NOT EXISTS item_venda (
     desconto            DECIMAL(12, 2) DEFAULT 0,
     acrescimo           DECIMAL(12, 2) DEFAULT 0,
     total_item          DECIMAL(12, 2),
- 
     -- Campos fiscais (nullable — para uso futuro)
     cfop                VARCHAR(4),
     ncm                 VARCHAR(8),
@@ -562,12 +529,11 @@ CREATE TABLE IF NOT EXISTS item_venda (
     cst_cofins          VARCHAR(2),
     aliq_cofins         DECIMAL(5, 4),
     valor_cofins        DECIMAL(12, 2),
- 
     cancelado           BOOLEAN NOT NULL DEFAULT FALSE,
     motivo_cancelamento VARCHAR(200),
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- ========================================
 -- 27. VENDAS_PAGAMENTOS (múltiplas formas por venda)
 -- ========================================
@@ -581,7 +547,7 @@ CREATE TABLE IF NOT EXISTS vendas_pagamentos (
     bandeira            VARCHAR(30),  -- Bandeira do cartão
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- ========================================
 -- 28. CANCELAMENTOS
 -- ========================================
@@ -595,7 +561,7 @@ CREATE TABLE IF NOT EXISTS cancelamentos (
     data_cancelamento   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- ========================================
 -- 29. COMPRA (mantém compatibilidade)
 -- ========================================
@@ -607,7 +573,7 @@ CREATE TABLE IF NOT EXISTS compra (
     forma_pagamento     VARCHAR(50) CHECK (forma_pagamento IN ('PIX', 'CARTAO', 'DINHEIRO')),
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 CREATE TABLE IF NOT EXISTS item_compra (
     id_item         SERIAL PRIMARY KEY,
     id_compra       INTEGER NOT NULL REFERENCES compra(id_compra) ON DELETE CASCADE,
@@ -616,7 +582,7 @@ CREATE TABLE IF NOT EXISTS item_compra (
     preco_unitario  DECIMAL(12, 4) NOT NULL CHECK (preco_unitario >= 0),
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- ========================================
 -- 30. NOTAS FISCAIS
 -- ========================================
@@ -641,7 +607,7 @@ CREATE TABLE IF NOT EXISTS notas_fiscais (
     contingencia            BOOLEAN NOT NULL DEFAULT FALSE,
     data_cadastro           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- ========================================
 -- 31. INUTILIZAÇÕES NF-e
 -- ========================================
@@ -658,7 +624,7 @@ CREATE TABLE IF NOT EXISTS inutilizacoes_nfe (
     id_usuario      INTEGER REFERENCES usuarios(id_usuario) ON DELETE RESTRICT,
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- ========================================
 -- 32. CONFIGURAÇÕES (chave-valor)
 -- ========================================
@@ -673,9 +639,9 @@ CREATE TABLE IF NOT EXISTS configuracoes (
     data_atualizacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_modulo_chave UNIQUE (modulo, chave)
 );
- 
+
 COMMENT ON TABLE configuracoes IS 'Parâmetros do sistema em chave-valor por módulo';
- 
+
 -- Configurações iniciais
 INSERT INTO configuracoes (modulo, chave, valor, tipo_dado, descricao) VALUES
     ('LICENCA', 'GRACE_PERIOD_DIAS', '7', 'INTEGER', 'Dias de operação offline após falha no heartbeat'),
@@ -685,7 +651,7 @@ INSERT INTO configuracoes (modulo, chave, valor, tipo_dado, descricao) VALUES
     ('IMPRESSAO', 'IMPRESSORA_PADRAO', '', 'STRING', 'Nome da impressora térmica padrão'),
     ('GERAL', 'NOME_SISTEMA', 'ERP Mercado', 'STRING', 'Nome exibido no sistema')
 ON CONFLICT DO NOTHING;
- 
+
 -- ========================================
 -- 33. LOG DE LOGIN
 -- ========================================
@@ -699,7 +665,7 @@ CREATE TABLE IF NOT EXISTS log_login (
     motivo_falha    VARCHAR(100),
     data_log        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- ========================================
 -- 34. LOG DE ALTERAÇÕES
 -- ========================================
@@ -714,7 +680,7 @@ CREATE TABLE IF NOT EXISTS log_alteracoes (
     valor_novo      TEXT,
     data_log        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- ========================================
 -- 35. LOG DE EXCLUSÕES
 -- ========================================
@@ -728,7 +694,6 @@ CREATE TABLE IF NOT EXISTS log_exclusoes (
     motivo          VARCHAR(300),
     data_log        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
 -- ========================================
 -- 36. LOG DE OPERAÇÕES CRÍTICAS
 -- ========================================
@@ -743,72 +708,72 @@ CREATE TABLE IF NOT EXISTS log_operacoes_criticas (
     dados_adicionais    TEXT, -- JSON
     data_log            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- ========================================
 -- ÍNDICES
 -- ========================================
- 
+
 -- Produto
 CREATE INDEX IF NOT EXISTS idx_produto_codigo_barras ON produto(codigo_barras);
 CREATE INDEX IF NOT EXISTS idx_produto_fornecedor ON produto(id_fornecedor);
 CREATE INDEX IF NOT EXISTS idx_produto_categoria ON produto(id_categoria);
 CREATE INDEX IF NOT EXISTS idx_produto_ativo ON produto(ativo);
- 
+
 -- Fornecedor
 CREATE INDEX IF NOT EXISTS idx_fornecedor_cnpj ON fornecedor(cnpj);
 CREATE INDEX IF NOT EXISTS idx_fornecedor_endereco ON fornecedor(id_endereco);
- 
+
 -- Clientes
 CREATE INDEX IF NOT EXISTS idx_clientes_endereco ON clientes(id_endereco_cliente);
 CREATE INDEX IF NOT EXISTS idx_clientes_email ON clientes(email_cliente);
- 
+
 -- Estoque
 CREATE INDEX IF NOT EXISTS idx_estoque_produto ON estoque(id_produto);
- 
+
 -- Movimentação
 CREATE INDEX IF NOT EXISTS idx_movimentacao_produto ON movimentacao_estoque(id_produto);
 CREATE INDEX IF NOT EXISTS idx_movimentacao_data ON movimentacao_estoque(data_movimento);
- 
+
 -- Venda
 CREATE INDEX IF NOT EXISTS idx_venda_data ON venda(data_venda);
 CREATE INDEX IF NOT EXISTS idx_venda_caixa ON venda(id_caixa);
 CREATE INDEX IF NOT EXISTS idx_venda_status ON venda(status);
- 
+
 -- Item venda
 CREATE INDEX IF NOT EXISTS idx_item_venda_venda ON item_venda(id_venda);
 CREATE INDEX IF NOT EXISTS idx_item_venda_produto ON item_venda(id_produto);
- 
+
 -- Compra
 CREATE INDEX IF NOT EXISTS idx_compra_fornecedor ON compra(id_fornecedor);
 CREATE INDEX IF NOT EXISTS idx_compra_data ON compra(data_compra);
 CREATE INDEX IF NOT EXISTS idx_item_compra_compra ON item_compra(id_compra);
- 
+
 -- Notas fiscais
 CREATE INDEX IF NOT EXISTS idx_notas_chave ON notas_fiscais(chave_acesso);
 CREATE INDEX IF NOT EXISTS idx_notas_tipo_numero ON notas_fiscais(tipo, numero, serie);
 CREATE INDEX IF NOT EXISTS idx_notas_status ON notas_fiscais(status);
- 
+
 -- Usuarios
 CREATE INDEX IF NOT EXISTS idx_usuarios_login ON usuarios(login);
 CREATE INDEX IF NOT EXISTS idx_usuarios_perfil ON usuarios(id_perfil);
- 
+
 -- Terminais
 CREATE INDEX IF NOT EXISTS idx_terminais_maquina ON terminais(identificador_maquina);
- 
+
 -- Sessões
 CREATE INDEX IF NOT EXISTS idx_sessoes_usuario ON sessoes(id_usuario, ativa);
- 
+
 -- Logs
 CREATE INDEX IF NOT EXISTS idx_log_login_data ON log_login(data_log);
 CREATE INDEX IF NOT EXISTS idx_log_login_usuario ON log_login(id_usuario);
 CREATE INDEX IF NOT EXISTS idx_log_alteracoes_data ON log_alteracoes(data_log);
 CREATE INDEX IF NOT EXISTS idx_log_exclusoes_data ON log_exclusoes(data_log);
 CREATE INDEX IF NOT EXISTS idx_log_criticas_data ON log_operacoes_criticas(data_log);
- 
+
 -- Endereços
 CREATE INDEX IF NOT EXISTS idx_enderecos_cidade ON enderecos(cidade);
 CREATE INDEX IF NOT EXISTS idx_enderecos_cep ON enderecos(cep);
- 
+
 -- ========================================
 -- TRIGGERS
 -- ========================================
@@ -819,35 +784,35 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
- 
+
 CREATE TRIGGER trg_fornecedor_update
     BEFORE UPDATE ON fornecedor
     FOR EACH ROW EXECUTE FUNCTION fn_atualizar_data_modificacao();
- 
+
 CREATE TRIGGER trg_produto_update
     BEFORE UPDATE ON produto
     FOR EACH ROW EXECUTE FUNCTION fn_atualizar_data_modificacao();
- 
+
 CREATE TRIGGER trg_clientes_update
     BEFORE UPDATE ON clientes
     FOR EACH ROW EXECUTE FUNCTION fn_atualizar_data_modificacao();
- 
+
 CREATE TRIGGER trg_funcionarios_update
     BEFORE UPDATE ON funcionarios
     FOR EACH ROW EXECUTE FUNCTION fn_atualizar_data_modificacao();
- 
+
 CREATE TRIGGER trg_usuarios_update
     BEFORE UPDATE ON usuarios
     FOR EACH ROW EXECUTE FUNCTION fn_atualizar_data_modificacao();
- 
+
 CREATE TRIGGER trg_terminais_update
     BEFORE UPDATE ON terminais
     FOR EACH ROW EXECUTE FUNCTION fn_atualizar_data_modificacao();
- 
+
 CREATE TRIGGER trg_empresa_update
     BEFORE UPDATE ON empresa
     FOR EACH ROW EXECUTE FUNCTION fn_atualizar_data_modificacao();
- 
+
 -- ========================================
 -- COMENTÁRIOS
 -- ========================================
