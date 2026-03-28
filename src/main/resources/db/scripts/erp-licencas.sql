@@ -1,13 +1,11 @@
--- Active: 1761779476832@@127.0.0.1@5432@erp_licencas
+-- Active: 1764800155343@@127.0.0.1@5432@erp_licencas
 
 #   RODE O SCRIPT DEPOIS DE CRIAR A DATABASE COM O ESTE COMANDO ISOLADO
 #   CREATE DATABASE erp_licencas;
 
--- ========================================
+
 -- TABELA: clientes_licenciados
--- Cadastro dos mercados que usam o sistema.
--- Cada registro = um mercado com seu banco local.
--- ========================================
+
 CREATE TABLE IF NOT EXISTS clientes_licenciados (
     id_cliente          SERIAL PRIMARY KEY,
     cnpj                VARCHAR(18) UNIQUE NOT NULL,
@@ -30,10 +28,9 @@ CREATE TABLE IF NOT EXISTS clientes_licenciados (
     data_atualizacao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
  
--- ========================================
+
 -- TABELA: licencas
--- Uma licença por mercado. Controla capacidade e validade.
--- ========================================
+
 CREATE TABLE IF NOT EXISTS licencas (
     id_licenca                  SERIAL PRIMARY KEY,
     id_cliente                  INTEGER NOT NULL REFERENCES clientes_licenciados(id_cliente) ON DELETE RESTRICT,
@@ -56,10 +53,9 @@ CREATE TABLE IF NOT EXISTS licencas (
     data_atualizacao            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
  
--- ========================================
+
 -- TABELA: terminais_autorizados
--- Cada máquina aprovada para usar o sistema.
--- ========================================
+
 CREATE TABLE IF NOT EXISTS terminais_autorizados (
     id_terminal             SERIAL PRIMARY KEY,
     id_licenca              INTEGER NOT NULL REFERENCES licencas(id_licenca) ON DELETE RESTRICT,
@@ -76,10 +72,9 @@ CREATE TABLE IF NOT EXISTS terminais_autorizados (
     CONSTRAINT uq_licenca_maquina UNIQUE (id_licenca, identificador_maquina)
 );
  
--- ========================================
+
 -- TABELA: validacoes_licenca
--- Log de todas as validações (heartbeat, ativação, verificação).
--- ========================================
+
 CREATE TABLE IF NOT EXISTS validacoes_licenca (
     id_validacao            BIGSERIAL PRIMARY KEY,
     id_licenca              INTEGER NOT NULL REFERENCES licencas(id_licenca) ON DELETE RESTRICT,
@@ -92,10 +87,9 @@ CREATE TABLE IF NOT EXISTS validacoes_licenca (
     dados_retornados        TEXT, -- JSON com pacote retornado ao local
     data_validacao          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
--- ========================================
+
 -- TABELA: usuarios_equipe
--- Usuários da equipe de gestão (vocês).
--- ========================================
+
 CREATE TABLE IF NOT EXISTS usuarios_equipe (
     id_usuario      SERIAL PRIMARY KEY,
     nome            VARCHAR(100) NOT NULL,
@@ -108,10 +102,9 @@ CREATE TABLE IF NOT EXISTS usuarios_equipe (
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
  
--- ========================================
+
 -- TABELA: log_acoes_equipe
--- Auditoria de ações da equipe.
--- ========================================
+
 CREATE TABLE IF NOT EXISTS log_acoes_equipe (
     id_log              BIGSERIAL PRIMARY KEY,
     id_usuario_equipe   INTEGER NOT NULL REFERENCES usuarios_equipe(id_usuario) ON DELETE RESTRICT,
@@ -124,9 +117,9 @@ CREATE TABLE IF NOT EXISTS log_acoes_equipe (
     data_acao           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
  
--- ========================================
+
 -- ÍNDICES
--- ========================================
+
 CREATE INDEX IF NOT EXISTS idx_clientes_cnpj ON clientes_licenciados(cnpj);
 CREATE INDEX IF NOT EXISTS idx_clientes_ativo ON clientes_licenciados(ativo);
 CREATE INDEX IF NOT EXISTS idx_licencas_cliente ON licencas(id_cliente);
@@ -138,9 +131,9 @@ CREATE INDEX IF NOT EXISTS idx_validacoes_data ON validacoes_licenca(data_valida
 CREATE INDEX IF NOT EXISTS idx_log_equipe_usuario ON log_acoes_equipe(id_usuario_equipe);
 CREATE INDEX IF NOT EXISTS idx_log_equipe_data ON log_acoes_equipe(data_acao);
  
--- ========================================
+
 -- TRIGGERS
--- ========================================
+
 CREATE OR REPLACE FUNCTION fn_atualizar_data_modificacao()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -161,18 +154,48 @@ CREATE TRIGGER trg_terminais_update
     BEFORE UPDATE ON terminais_autorizados
     FOR EACH ROW EXECUTE FUNCTION fn_atualizar_data_modificacao();
  
--- ========================================
+
 -- DADOS INICIAIS
--- ========================================
+
  
 -- Usuário admin da equipe (senha: trocar após primeiro login)
 INSERT INTO usuarios_equipe (nome, email, senha_hash, perfil)
 VALUES ('Administrador', 'admin@erp.com', '123456', 'ADMIN')
 ON CONFLICT DO NOTHING;
  
--- ========================================
+-- DADOS DE TESTE (3 mercados com licenças)
+ 
+-- Mercado 1
+INSERT INTO clientes_licenciados (cnpj, razao_social, nome_fantasia, inscricao_estadual, telefone, email, responsavel, logradouro, numero, bairro, cidade, estado, cep, ativo)
+VALUES ('12.345.678/0001-90', 'Supermercado Bom Preço LTDA', 'Bom Preço', '123456789', '(71) 99876-5432', 'contato@bompreco.com.br', 'João Silva', 'Rua das Palmeiras', '150', 'Centro', 'Salvador', 'BA', '40020-000', TRUE)
+ON CONFLICT (cnpj) DO NOTHING;
+ 
+INSERT INTO licencas (id_cliente, chave_ativacao, qtd_pdv_incluso, qtd_gerenciador_incluso, qtd_pdv_adicional, qtd_gerenciador_adicional, qtd_pdv_total, qtd_gerenciador_total, data_ativacao, data_validade, status)
+SELECT id_cliente, 'BOMPRECO-AAAA-1111-XXXX', 1, 1, 2, 0, 3, 1, CURRENT_DATE, CURRENT_DATE + INTERVAL '1 year', 'ATIVA'
+FROM clientes_licenciados WHERE cnpj = '12.345.678/0001-90'
+ON CONFLICT (chave_ativacao) DO NOTHING;
+ 
+-- Mercado 2
+INSERT INTO clientes_licenciados (cnpj, razao_social, nome_fantasia, inscricao_estadual, telefone, email, responsavel, logradouro, numero, bairro, cidade, estado, cep, ativo)
+VALUES ('98.765.432/0001-10', 'Mercadinho Economia EIRELI', 'Economia', '987654321', '(75) 98765-1234', 'adm@economia.com.br', 'Maria Souza', 'Av. Brasil', '500', 'Jardim Europa', 'Feira de Santana', 'BA', '44001-100', TRUE)
+ON CONFLICT (cnpj) DO NOTHING;
+ 
+INSERT INTO licencas (id_cliente, chave_ativacao, qtd_pdv_incluso, qtd_gerenciador_incluso, qtd_pdv_adicional, qtd_gerenciador_adicional, qtd_pdv_total, qtd_gerenciador_total, data_ativacao, data_validade, status)
+SELECT id_cliente, 'ECONOMIA-BBBB-2222-YYYY', 1, 1, 0, 0, 1, 1, CURRENT_DATE, CURRENT_DATE + INTERVAL '1 year', 'ATIVA'
+FROM clientes_licenciados WHERE cnpj = '98.765.432/0001-10'
+ON CONFLICT (chave_ativacao) DO NOTHING;
+ 
+-- Mercado 3 (licença expirada — para testar bloqueio)
+INSERT INTO clientes_licenciados (cnpj, razao_social, nome_fantasia, inscricao_estadual, telefone, email, responsavel, logradouro, numero, bairro, cidade, estado, cep, ativo)
+VALUES ('11.222.333/0001-44', 'Atacadão Popular LTDA', 'Atacadão Popular', '112233445', '(71) 91234-5678', 'financeiro@atacadao.com.br', 'Carlos Oliveira', 'Rua do Comércio', '1200', 'Boca do Rio', 'Salvador', 'BA', '41710-000', TRUE)
+ON CONFLICT (cnpj) DO NOTHING;
+ 
+INSERT INTO licencas (id_cliente, chave_ativacao, qtd_pdv_incluso, qtd_gerenciador_incluso, qtd_pdv_adicional, qtd_gerenciador_adicional, qtd_pdv_total, qtd_gerenciador_total, data_ativacao, data_validade, status)
+SELECT id_cliente, 'ATACADAO-CCCC-3333-ZZZZ', 1, 1, 1, 0, 2, 1, '2024-01-01', '2025-01-01', 'EXPIRADA'
+FROM clientes_licenciados WHERE cnpj = '11.222.333/0001-44'
+ON CONFLICT (chave_ativacao) DO NOTHING;
 -- COMENTÁRIOS
--- ========================================
+
 COMMENT ON TABLE clientes_licenciados IS 'Mercados clientes que possuem o sistema instalado';
 COMMENT ON TABLE licencas IS 'Licenças emitidas — uma por mercado, controla capacidade e validade';
 COMMENT ON TABLE terminais_autorizados IS 'Máquinas aprovadas (PDV/Gerenciador) por licença';
