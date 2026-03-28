@@ -2,116 +2,125 @@ package main.models;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "produto")
+@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Produto {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_produto")
     private int idProduto;
+
+    @Column(name = "descricao", nullable = false)
     private String descricao;
+
+    @Column(name = "codigo_barras", unique = true, length = 50)
     private String codigoBarras;
+    
+    @Column(name = "unidade_medida")
     private String unidadeMedida;
+
+    @Column(name = "preco_custo", precision = 12, scale = 4)
     private BigDecimal precoCusto;
+
+    @Column(name = "preco_venda", precision = 12, scale = 4)
     private BigDecimal precoVenda;
-    private int estoqueAtual;
-    private Integer idFornecedor; // Pode ser null
-    private Timestamp dataCadastro;
-    private Timestamp dataAtualizacao;
 
-    // Construtores
-    public Produto() {}
+    @Column(name = "margem_lucro", precision = 5, scale = 2)
+    private BigDecimal margemLucro;
 
-    public Produto(int idProduto, String descricao, String codigoBarras,
-                   String unidadeMedida, BigDecimal precoCusto, BigDecimal precoVenda,
-                   int estoqueAtual, Integer idFornecedor) {
-        this.idProduto = idProduto;
-        this.descricao = descricao;
-        this.codigoBarras = codigoBarras;
-        this.unidadeMedida = unidadeMedida;
-        this.precoCusto = precoCusto;
-        this.precoVenda = precoVenda;
-        this.estoqueAtual = estoqueAtual;
-        this.idFornecedor = idFornecedor;
-    }
+    @ManyToOne
+    @JoinColumn(name = "id_unidade_medida")
+    private UnidadeMedida unidadeMedidaRef;
 
-    // Getters e Setters
-    public int getIdProduto() {
-        return idProduto;
-    }
+    @ManyToOne
+    @JoinColumn(name = "id_categoria")
+    private Categoria categoria;
 
-    public void setIdProduto(int idProduto) {
-        this.idProduto = idProduto;
-    }
+    @ManyToOne
+    @JoinColumn(name = "id_fornecedor")
+    private Fornecedor fornecedor;
 
-    public String getDescricao() {
-        return descricao;
-    }
+    @Column(name = "estoque_atual")
+    private Integer estoqueAtual = 0;
 
-    public void setDescricao(String descricao) {
-        this.descricao = descricao;
-    }
+    @Column(name = "estoque_minimo", precision = 12, scale = 3)
+    private BigDecimal estoqueMinimo;
 
-    public String getCodigoBarras() {
-        return codigoBarras;
-    }
+    @Column(name = "estoque_maximo", precision = 12, scale = 3)
+    private BigDecimal estoqueMaximo;
 
-    public void setCodigoBarras(String codigoBarras) {
-        this.codigoBarras = codigoBarras;
-    }
+    private String ncm;
+    private String cest;
 
-    public String getUnidadeMedida() {
-        return unidadeMedida;
-    }
+    @Column(name = "cfop_venda", length = 4)
+    private String cfopVenda;
 
-    public void setUnidadeMedida(String unidadeMedida) {
-        this.unidadeMedida = unidadeMedida;
-    }
+    @Column(name = "cst_icms", length = 3)
+    private String cstIcms;
 
-    public BigDecimal getPrecoCusto() {
-        return precoCusto;
-    }
+    private String csosn;
 
-    public void setPrecoCusto(BigDecimal precoCusto) {
-        this.precoCusto = precoCusto;
-    }
+    @Column(name = "cst_pis", length = 2)
+    private String cstPis;
 
-    public BigDecimal getPrecoVenda() {
-        return precoVenda;
-    }
+    @Column(name = "cst_cofins", length = 2)
+    private String cstCofins;
 
-    public void setPrecoVenda(BigDecimal precoVenda) {
-        this.precoVenda = precoVenda;
-    }
+    @Column(name = "cst_ipi", length = 2)
+    private String cstIpi;
 
-    public int getEstoqueAtual() {
-        return estoqueAtual;
-    }
+    @Column(name = "aliq_icms", precision = 5, scale = 2)
+    private BigDecimal aliqIcms;
 
-    public void setEstoqueAtual(int estoqueAtual) {
-        this.estoqueAtual = estoqueAtual;
-    }
+    @Column(name = "aliq_pis", precision = 5, scale = 4)
+    private BigDecimal aliqPis;
 
-    public Integer getIdFornecedor() {
-        return idFornecedor;
-    }
+    @Column(name = "aliq_cofins", precision = 5, scale = 4)
+    private BigDecimal aliqCofins;
 
-    public void setIdFornecedor(Integer idFornecedor) {
-        this.idFornecedor = idFornecedor;
-    }
+    @Column(name = "aliq_ipi", precision = 5, scale = 2)
+    private BigDecimal aliqIpi;
 
-    public Timestamp getDataCadastro() {
-        return dataCadastro;
-    }
+    @Column(name = "peso_liquido", precision = 10, scale = 3)
+    private BigDecimal pesoLiquido;
 
-    public void setDataCadastro(Timestamp dataCadastro) {
-        this.dataCadastro = dataCadastro;
-    }
+    @Column(name = "peso_bruto", precision = 10, scale = 3)
+    private BigDecimal pesoBruto;
 
-    public Timestamp getDataAtualizacao() {
-        return dataAtualizacao;
-    }
+    @Column(name = "permite_fracionamento", nullable = false)
+    private Boolean permiteFracionamento = false;
 
-    public void setDataAtualizacao(Timestamp dataAtualizacao) {
-        this.dataAtualizacao = dataAtualizacao;
-    }
+    @Column(name = "controla_estoque", nullable = false)
+    private Boolean controlaEstoque = true;
 
+    @Column(nullable = false)
+    private Boolean balanca = false;
+
+    @Column(nullable = false)
+    private Boolean ativo = true;
+
+    @Column(name = "data_cadastro", nullable = false)
+    private LocalDateTime dataCadastro;
+
+    @Column(name = "data_atualizacao", nullable = false)
+    private LocalDateTime dataAtualizacao;
+
+    
     @Override
     public String toString() {
         return descricao;
