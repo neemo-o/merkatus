@@ -15,6 +15,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class AuthController {
 
     private double xOffset = 0;
@@ -82,15 +85,18 @@ public class AuthController {
             Connection db = DatabaseConnection.getConnectionLicenses();
 
             if (db != null) {
-                // Verificar se o CNPJ existe e está pago
-                String query = "SELECT status FROM licencas WHERE cnpj = ?";
+                // ATUALIZADO: agora consulta clientes_licenciados + licencas (JOIN)
+                // Verifica se o CNPJ existe e se a licença está ativa
+                String query = "SELECT l.status FROM clientes_licenciados c " +
+                               "INNER JOIN licencas l ON c.id_cliente = l.id_cliente " +
+                               "WHERE c.cnpj = ? AND c.ativo = TRUE";
                 PreparedStatement stmt = db.prepareStatement(query);
                 stmt.setString(1, doc);
                 ResultSet rs = stmt.executeQuery();
 
                 if (rs.next()) {
                     String status = rs.getString("status");
-                    if ("PAGO".equals(status)) {
+                    if ("ATIVA".equals(status)) {
                         statusMessage.setText("CNPJ conectado com sucesso.");
                         statusMessage.setVisible(true);
 
@@ -101,22 +107,22 @@ public class AuthController {
                             Scene scene = new Scene(root);
                             Stage stage = (Stage) accessButton.getScene().getWindow();
                             stage.setScene(scene);
-                            stage.setResizable(false); // Garantir que a nova janela também não seja redimensionável
+                            stage.setResizable(false);
 
                             javafx.application.Platform.runLater(() -> {
-                            stage.centerOnScreen();
-                        });
+                                stage.centerOnScreen();
+                            });
                             stage.show();
                         } catch (Exception e) {
                             statusMessage.setText("Erro ao carregar a próxima tela: " + e.getMessage());
                             statusMessage.setVisible(true);
                         }
                     } else {
-                        statusMessage.setText("CNPJ não pago. Acesso negado.");
+                        statusMessage.setText("Licença não ativa (" + status + "). Acesso negado.");
                         statusMessage.setVisible(true);
                     }
                 } else {
-                    statusMessage.setText("CNPJ não encontrado no banco de dados.");
+                    statusMessage.setText("CNPJ não encontrado ou sem licença ativa.");
                     statusMessage.setVisible(true);
                 }
 
@@ -132,8 +138,9 @@ public class AuthController {
             statusMessage.setVisible(true);
         }
     }
+
     @FXML
-     private String formatCNPJ(String numbers) {
+    private String formatCNPJ(String numbers) {
         if (numbers.isEmpty()) return "";
         
         StringBuilder formatted = new StringBuilder();
@@ -189,7 +196,7 @@ public class AuthController {
 
     @FXML
     private void handleMouseDragged(javafx.scene.input.MouseEvent event) {
-    Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
+        Stage stage = (Stage) ((javafx.scene.Node) event.getSource()).getScene().getWindow();
         stage.setX(event.getScreenX() - xOffset);
         stage.setY(event.getScreenY() - yOffset);
     }

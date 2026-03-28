@@ -16,29 +16,33 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import main.database.DatabaseConnection;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class Login2Controller {
 
     private double xOffset = 0;
     private double yOffset = 0;
 
     @FXML
-    private TextField documentField1;
+    private TextField usernameField;
 
     @FXML
-    private PasswordField documentField11;
+    private PasswordField passwordField;
 
     @FXML
     private Button loginButton;
 
     @FXML
-    private Button minimizeButton;
+    private Button loginButton1; // Botão Fechar
 
     @FXML
     private Text statusMessage;
 
     @FXML
     public void initialize() {
-        documentField1.sceneProperty().addListener((obs, oldScene, newScene) -> {
+
+        usernameField.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
                 Stage stage = (Stage) newScene.getWindow();
                 if (stage != null) {
@@ -56,23 +60,43 @@ public class Login2Controller {
             Connection db = DatabaseConnection.getConnectionMercado();
 
             if (db != null) {
-                String query = "SELECT * FROM licencas WHERE id_usuario = ?";
+
+                // ATUALIZADO: agora consulta tabela 'usuarios' em vez de 'licencas'
+                String query = "SELECT * FROM usuarios WHERE id_usuario = ? AND ativo = TRUE";
                 PreparedStatement stmt = db.prepareStatement(query);
+
                 stmt.setInt(1, username);
                 ResultSet rs = stmt.executeQuery();
 
                 if (rs.next()) {
-                    String dbPassword = rs.getString("senha_usuario");
+                    // ATUALIZADO: campo agora é 'senha_hash' em vez de 'senha_usuario'
+                    String dbPassword = rs.getString("senha_hash");
 
+                    // TODO: Quando implementar hash de verdade (bcrypt/argon2),
+                    // substituir esta comparação por BCrypt.checkpw(password, dbPassword)
                     if (dbPassword.equals(password)) {
                         statusMessage.setText("Login realizado com sucesso!");
                         statusMessage.setVisible(true);
+
+                        // Verificar se usuário está bloqueado
+                        if (rs.getBoolean("bloqueado")) {
+                            statusMessage.setText("Usuário bloqueado. Contate o administrador.");
+                            statusMessage.setVisible(true);
+                            return false;
+                        }
+
                         return true;
                     } else {
                         statusMessage.setText("Credenciais inválidas.");
                         statusMessage.setVisible(true);
                     }
+                } else {
+                    statusMessage.setText("Usuário não encontrado ou inativo.");
+                    statusMessage.setVisible(true);
                 }
+
+                rs.close();
+                stmt.close();
             }
 
         } catch (SQLException e) {
@@ -85,8 +109,8 @@ public class Login2Controller {
 
     @FXML
     private void handleLoginButton() {
-        String username = documentField1.getText().trim();
-        String password = documentField11.getText().trim();
+        String username = usernameField.getText().trim();
+        String password = passwordField.getText().trim();
 
         if (username.isEmpty()) {
             statusMessage.setText("Nome de usuário não pode estar vazio.");
@@ -128,31 +152,42 @@ public class Login2Controller {
         } catch (NumberFormatException e) {
             statusMessage.setText("ID de usuário inválido.");
             statusMessage.setVisible(true);
+            return;
+        }
+    }
+
+    @FXML
+    private void handleMainScreenLink() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/main/view/MainScreen.fxml"));
+            Parent root = loader.load();
+            Scene scene = new Scene(root);
+
+            if (loginButton.getScene() != null && loginButton.getScene().getWindow() != null) {
+                Stage stage = (Stage) loginButton.getScene().getWindow();
+                stage.setResizable(false);
+                stage.centerOnScreen();
+                stage.setScene(scene);
+
+                stage.setMaximized(true);
+                stage.show();
+            } else {
+                statusMessage.setText("Erro: Janela não está disponível.");
+                statusMessage.setVisible(true);
+            }
+        } catch (Exception e) {
+            statusMessage.setText("Erro ao voltar para login: " + e.getMessage());
+            statusMessage.setVisible(true);
         }
     }
 
     @FXML
     private void handleCloseButton() {
-        Stage stage = null;
-
-        if (loginButton != null && loginButton.getScene() != null) {
-            stage = (Stage) loginButton.getScene().getWindow();
-        } else if (minimizeButton != null && minimizeButton.getScene() != null) {
-            stage = (Stage) minimizeButton.getScene().getWindow();
-        }
-
-        if (stage != null) {
+        if (loginButton1.getScene() != null && loginButton1.getScene().getWindow() != null) {
+            Stage stage = (Stage) loginButton1.getScene().getWindow();
             stage.close();
         } else {
             System.exit(0);
-        }
-    }
-
-    @FXML
-    private void handleMinimize() {
-        if (minimizeButton.getScene() != null && minimizeButton.getScene().getWindow() != null) {
-            Stage stage = (Stage) minimizeButton.getScene().getWindow();
-            stage.setIconified(true);
         }
     }
 
@@ -168,4 +203,5 @@ public class Login2Controller {
         stage.setX(event.getScreenX() - xOffset);
         stage.setY(event.getScreenY() - yOffset);
     }
+
 }
