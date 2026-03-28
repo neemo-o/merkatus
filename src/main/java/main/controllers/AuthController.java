@@ -1,5 +1,8 @@
 package main.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -11,13 +14,14 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import main.database.auth.Auth;
 
-import org.springframework.stereotype.Component;
-
 @Component
 public class AuthController {
 
     private double xOffset = 0;
     private double yOffset = 0;
+
+    @Autowired
+    private Auth auth;
 
     @FXML
     private Button minimizeButton;
@@ -39,20 +43,21 @@ public class AuthController {
     @FXML
     public void initialize() {
         documentField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (isFormatting || newValue == null) return;
-            
+            if (isFormatting || newValue == null)
+                return;
+
             isFormatting = true;
-            
+
             Platform.runLater(() -> {
                 try {
                     String numbers = newValue.replaceAll("[^0-9]", "");
-                    
+
                     if (numbers.length() > 14) {
                         numbers = numbers.substring(0, 14);
                     }
-                    
+
                     String formatted = formatCNPJ(numbers);
-                    
+
                     if (!formatted.equals(documentField.getText())) {
                         documentField.setText(formatted);
                         documentField.positionCaret(formatted.length());
@@ -67,7 +72,7 @@ public class AuthController {
     @FXML
     private void handleAccessButton() {
         String doc = documentField.getText().trim();
-        
+
         if (doc.length() != 18) {
             statusMessage.setText("CNPJ deve ter exatamente 18 caracteres.");
             statusMessage.setVisible(true);
@@ -80,7 +85,7 @@ public class AuthController {
             return;
         }
 
-        if (Auth.validateCNPJ(doc)) {
+        if (auth.validateCNPJ(doc)) {
             statusMessage.setText("CNPJ conectado com sucesso.");
             statusMessage.setVisible(true);
 
@@ -109,10 +114,11 @@ public class AuthController {
 
     @FXML
     private String formatCNPJ(String numbers) {
-        if (numbers.isEmpty()) return "";
-        
+        if (numbers.isEmpty())
+            return "";
+
         StringBuilder formatted = new StringBuilder();
-        
+
         for (int i = 0; i < numbers.length(); i++) {
             if (i == 2 || i == 5) {
                 formatted.append(".");
@@ -123,7 +129,7 @@ public class AuthController {
             }
             formatted.append(numbers.charAt(i));
         }
-        
+
         return formatted.toString();
     }
 

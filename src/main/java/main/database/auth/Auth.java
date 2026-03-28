@@ -1,55 +1,47 @@
 package main.database.auth;
 
-import main.database.DatabaseConnection;
+import main.database.DatabaseManager;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+@Component
 public class Auth {
 
-  
-    public static boolean validateCNPJ(String cnpj) {
-        Connection db = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        
-        try {
-            db = DatabaseConnection.getConnectionLicenses();
-            
-            if (db != null) {
-                String query = "SELECT l.status FROM clientes_licenciados c " +
-                               "INNER JOIN licencas l ON c.id_cliente = l.id_cliente " +
-                               "WHERE c.cnpj = ? AND c.ativo = TRUE";
-                stmt = db.prepareStatement(query);
-                stmt.setString(1, cnpj);
-                rs = stmt.executeQuery();
-                
+    @Autowired
+    private DatabaseManager databaseManager;
+
+    public boolean validateCNPJ(String cnpj) {
+        String sql = """
+            SELECT l.status
+            FROM clientes_licenciados c
+            INNER JOIN licencas l ON c.id_cliente = l.id_cliente
+            WHERE c.cnpj = ? AND c.ativo = TRUE
+            """;
+
+        try (Connection conn = databaseManager.getLicencasConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, cnpj);
+
+            try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    String status = rs.getString("status");
-                    return "ATIVA".equals(status);
+                    return "ATIVA".equals(rs.getString("status"));
                 }
             }
-            
-            return false;
-            
         } catch (SQLException e) {
-            System.err.println("Erro ao conectar ao banco de dados: " + e.getMessage());
-            return false;
-        } finally {
-            try {
-                if (rs != null) rs.close();
-                if (stmt != null) stmt.close();
-            } catch (SQLException e) {
-                System.err.println("Erro ao fechar recursos: " + e.getMessage());
-            }
+            System.err.println("Erro ao validar CNPJ: " + e.getMessage());
         }
+        return false;
     }
-    
-    public static boolean testConnection() {
-        try {
-            Connection db = DatabaseConnection.getConnectionLicenses();
-            return db != null && !db.isClosed();
+
+    public boolean testConnection() {
+        try (Connection conn = databaseManager.getLicencasConnection()) {
+            return conn != null && !conn.isClosed();
         } catch (SQLException e) {
             System.err.println("Erro ao testar conexão: " + e.getMessage());
             return false;

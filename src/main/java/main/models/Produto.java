@@ -23,12 +23,12 @@ public class Produto {
     private BigDecimal    precoVenda;         
     private BigDecimal    margemLucro;        
 
-  
+
     private Integer       estoqueAtual;       
     private BigDecimal    estoqueMinimo;      
     private BigDecimal    estoqueMaximo;      
 
-  
+
     private String        ncm;              
     private String        cest;             
     private String        cfopVenda;        
@@ -42,24 +42,23 @@ public class Produto {
     private BigDecimal    aliqCofins;       
     private BigDecimal    aliqIpi;          
 
-  
+
     private BigDecimal    pesoLiquido;      
     private BigDecimal    pesoBruto;        
 
-   
+
     private boolean       permiteFracionamento; 
     private boolean       controlaEstoque;      
     private boolean       balanca;            
     private boolean       ativo;                 
 
-   
+
     private LocalDateTime dataCadastro;
     private LocalDateTime dataAtualizacao;
 
 
-   
     // Construtores
-  
+
 
     public Produto() {
         this.estoqueAtual          = 0;
