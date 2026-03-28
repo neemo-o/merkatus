@@ -192,6 +192,14 @@ public class Login2Controller {
     }
 
     @FXML
+    private void handleMinimize() {
+        if (loginButton.getScene() != null && loginButton.getScene().getWindow() != null) {
+            Stage stage = (Stage) loginButton.getScene().getWindow();
+            stage.setIconified(true);
+        }
+    }
+
+    @FXML
     private void handleMousePressed(javafx.scene.input.MouseEvent event) {
         xOffset = event.getSceneX();
         yOffset = event.getSceneY();

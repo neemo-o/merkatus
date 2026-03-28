@@ -45,13 +45,13 @@
           <Label alignment="CENTER_RIGHT" minWidth="55.0" text="Usuário:" textFill="#437d8d">
             <font><Font name="Segoe UI Semibold" size="13.0" /></font>
           </Label>
-          <TextField fx:id="documentField1" prefHeight="28.0" prefWidth="150.0" style="-fx-background-color: white; -fx-background-radius: 3; -fx-border-color: #87ceeb; -fx-border-radius: 3; -fx-border-width: 1.5; -fx-padding: 4 6; -fx-font-size: 12;" />
+          <TextField fx:id="usernameField" prefHeight="28.0" prefWidth="150.0" style="-fx-background-color: white; -fx-background-radius: 3; -fx-border-color: #87ceeb; -fx-border-radius: 3; -fx-border-width: 1.5; -fx-padding: 4 6; -fx-font-size: 12;" />
         </HBox>
         <HBox alignment="CENTER_LEFT" spacing="8.0">
           <Label alignment="CENTER_RIGHT" minWidth="55.0" text="Senha:" textFill="#437d8d">
             <font><Font name="Segoe UI Semibold" size="13.0" /></font>
           </Label>
-          <PasswordField fx:id="documentField11" prefHeight="28.0" prefWidth="200.0" style="-fx-background-color: white; -fx-background-radius: 3; -fx-border-color: #87ceeb; -fx-border-radius: 3; -fx-border-width: 1.5; -fx-padding: 4 6; -fx-font-size: 12;" />
+          <PasswordField fx:id="passwordField" prefHeight="28.0" prefWidth="200.0" style="-fx-background-color: white; -fx-background-radius: 3; -fx-border-color: #87ceeb; -fx-border-radius: 3; -fx-border-width: 1.5; -fx-padding: 4 6; -fx-font-size: 12;" />
         </HBox>
       </VBox>
     </HBox>

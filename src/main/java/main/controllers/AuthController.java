@@ -9,11 +9,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import main.database.DatabaseConnection;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import main.database.auth.Auth;
 
 import org.springframework.stereotype.Component;
 
@@ -38,27 +34,33 @@ public class AuthController {
     @FXML
     private Text statusMessage;
 
+    private boolean isFormatting = false;
+
     @FXML
     public void initialize() {
-        // Aplicar máscara de CNPJ com formatação automática
         documentField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue == null || newValue.isEmpty()) return;
+            if (isFormatting || newValue == null) return;
             
-            // Remove todos os caracteres não numéricos
-            String numbers = newValue.replaceAll("[^0-9]", "");
+            isFormatting = true;
             
-            // Limita a 14 dígitos
-            if (numbers.length() > 14) {
-                numbers = numbers.substring(0, 14);
-            }
-            
-            String formatted = formatCNPJ(numbers);
-            
-            // Atualiza o campo apenas se o texto formatado for diferente
-            if (!formatted.equals(newValue)) {
-                documentField.setText(formatted);
-                documentField.positionCaret(formatted.length());
-            }
+            Platform.runLater(() -> {
+                try {
+                    String numbers = newValue.replaceAll("[^0-9]", "");
+                    
+                    if (numbers.length() > 14) {
+                        numbers = numbers.substring(0, 14);
+                    }
+                    
+                    String formatted = formatCNPJ(numbers);
+                    
+                    if (!formatted.equals(documentField.getText())) {
+                        documentField.setText(formatted);
+                        documentField.positionCaret(formatted.length());
+                    }
+                } finally {
+                    isFormatting = false;
+                }
+            });
         });
     }
 
@@ -66,75 +68,41 @@ public class AuthController {
     private void handleAccessButton() {
         String doc = documentField.getText().trim();
         
-        // Validar se o CNPJ tem exatamente 18 caracteres
         if (doc.length() != 18) {
             statusMessage.setText("CNPJ deve ter exatamente 18 caracteres.");
             statusMessage.setVisible(true);
             return;
         }
 
-        
         if (!doc.matches("\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}")) {
             statusMessage.setText("Formato de CNPJ inválido. Use: XX.XXX.XXX/XXXX-XX");
             statusMessage.setVisible(true);
             return;
         }
 
-        // Só conectar ao banco se os dados forem válidos
-        try {
-            Connection db = DatabaseConnection.getConnectionLicenses();
+        if (Auth.validateCNPJ(doc)) {
+            statusMessage.setText("CNPJ conectado com sucesso.");
+            statusMessage.setVisible(true);
 
-            if (db != null) {
-                // ATUALIZADO: agora consulta clientes_licenciados + licencas (JOIN)
-                // Verifica se o CNPJ existe e se a licença está ativa
-                String query = "SELECT l.status FROM clientes_licenciados c " +
-                               "INNER JOIN licencas l ON c.id_cliente = l.id_cliente " +
-                               "WHERE c.cnpj = ? AND c.ativo = TRUE";
-                PreparedStatement stmt = db.prepareStatement(query);
-                stmt.setString(1, doc);
-                ResultSet rs = stmt.executeQuery();
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/main/view/Login2.fxml"));
+                Parent root = loader.load();
+                Scene scene = new Scene(root);
+                Stage stage = (Stage) accessButton.getScene().getWindow();
+                stage.setScene(scene);
+                stage.setResizable(false);
 
-                if (rs.next()) {
-                    String status = rs.getString("status");
-                    if ("ATIVA".equals(status)) {
-                        statusMessage.setText("CNPJ conectado com sucesso.");
-                        statusMessage.setVisible(true);
-
-                        // Navegar para Login2.fxml
-                        try {
-                            FXMLLoader loader = new FXMLLoader(getClass().getResource("/main/view/Login2.fxml"));
-                            Parent root = loader.load();
-                            Scene scene = new Scene(root);
-                            Stage stage = (Stage) accessButton.getScene().getWindow();
-                            stage.setScene(scene);
-                            stage.setResizable(false);
-
-                            javafx.application.Platform.runLater(() -> {
-                                stage.centerOnScreen();
-                            });
-                            stage.show();
-                        } catch (Exception e) {
-                            statusMessage.setText("Erro ao carregar a próxima tela: " + e.getMessage());
-                            statusMessage.setVisible(true);
-                        }
-                    } else {
-                        statusMessage.setText("Licença não ativa (" + status + "). Acesso negado.");
-                        statusMessage.setVisible(true);
-                    }
-                } else {
-                    statusMessage.setText("CNPJ não encontrado ou sem licença ativa.");
-                    statusMessage.setVisible(true);
-                }
-
-                rs.close();
-                stmt.close();
-            } else {
-                statusMessage.setText("Falha na conexão com o banco de dados.");
+                javafx.application.Platform.runLater(() -> {
+                    stage.centerOnScreen();
+                });
+                stage.show();
+            } catch (Exception e) {
+                System.out.println();
+                statusMessage.setText("Erro ao carregar a próxima tela: " + e.getMessage());
                 statusMessage.setVisible(true);
             }
-
-        } catch (SQLException e) {
-            statusMessage.setText("Erro ao conectar ao banco de dados: " + e.getMessage());
+        } else {
+            statusMessage.setText("CNPJ não encontrado ou sem licença ativa.");
             statusMessage.setVisible(true);
         }
     }
@@ -157,22 +125,6 @@ public class AuthController {
         }
         
         return formatted.toString();
-    }
-
-    @FXML
-    private void handleCadastroLink() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/main/view/Registro1.fxml"));
-            Parent root = loader.load();
-            Scene scene = new Scene(root);
-            Stage stage = (Stage) accessButton.getScene().getWindow();
-            stage.setResizable(false); 
-            stage.setScene(scene);
-            stage.show();
-        } catch (Exception e) {
-            statusMessage.setText("Erro ao carregar a tela de cadastro: " + e.getMessage());
-            statusMessage.setVisible(true);
-        }
     }
 
     @FXML
