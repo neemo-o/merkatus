@@ -14,6 +14,37 @@
     <top>
         <VBox spacing="0">
 
+            <!-- Barra de título azul com minimizar e fechar -->
+            <HBox alignment="CENTER_LEFT" prefHeight="22"
+                  style="-fx-background-color: #194e8f; -fx-padding: 0 4 0 10;">
+
+                <Label text="Produtos"
+                       style="-fx-text-fill: white; -fx-font-size: 12;
+                              -fx-font-weight: bold; -fx-font-family: 'Segoe UI';">
+                    <font><Font name="Segoe UI Bold" size="12"/></font>
+                </Label>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button text="—" onAction="#minimizar"
+                        prefHeight="22" prefWidth="30"
+                        style="-fx-background-color: transparent;
+                               -fx-text-fill: rgba(255,255,255,0.8);
+                               -fx-font-size: 12;
+                               -fx-cursor: hand;
+                               -fx-border-width: 0;
+                               -fx-padding: 0;"/>
+
+                <Button text="✕" onAction="#fechar"
+                        prefHeight="22" prefWidth="30"
+                        style="-fx-background-color: transparent;
+                               -fx-text-fill: rgba(255,255,255,0.8);
+                               -fx-font-size: 12;
+                               -fx-cursor: hand;
+                               -fx-border-width: 0;
+                               -fx-padding: 0;"/>
+            </HBox>
+
             <!-- Barra de filtros -->
             <HBox spacing="8" alignment="CENTER_LEFT"
                   style="-fx-background-color: white;

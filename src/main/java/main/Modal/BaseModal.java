@@ -103,6 +103,11 @@ public abstract class BaseModal<T> {
         stage.close();
     }
 
+    @FXML
+    protected void minimizar() {
+        ((Stage) tableView.getScene().getWindow()).setIconified(true);
+    }
+
     // Métodos abstratos que cada modal filho implementa
     protected abstract List<T>  fetchFromDatabase();
     protected abstract void     configureColumns(TableView<T> table);
