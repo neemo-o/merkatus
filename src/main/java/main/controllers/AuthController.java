@@ -13,6 +13,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import main.database.auth.Auth;
+import main.util.FXMLLoaderFactory;
 
 @Component
 public class AuthController {
@@ -22,6 +23,9 @@ public class AuthController {
 
     @Autowired
     private Auth auth;
+
+    @Autowired
+    private FXMLLoaderFactory loaderFactory;
 
     @FXML
     private Button minimizeButton;
@@ -90,7 +94,7 @@ public class AuthController {
             statusMessage.setVisible(true);
 
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/main/view/Login2.fxml"));
+                FXMLLoader loader = loaderFactory.create("/main/view/Login2.fxml");
                 Parent root = loader.load();
                 Scene scene = new Scene(root);
                 Stage stage = (Stage) accessButton.getScene().getWindow();

@@ -1,5 +1,8 @@
 package main.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -11,8 +14,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import main.database.auth.UserAuth;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import main.util.FXMLLoaderFactory;
 
 @Component
 public class Login2Controller {
@@ -20,14 +22,22 @@ public class Login2Controller {
     @Autowired
     private UserAuth userAuth;
 
+    @Autowired
+    private FXMLLoaderFactory loaderFactory;
+
     private double xOffset = 0;
     private double yOffset = 0;
 
-    @FXML private TextField usernameField;
-    @FXML private PasswordField passwordField;
-    @FXML private Button loginButton;
-    @FXML private Button loginButton1;
-    @FXML private Text statusMessage;
+    @FXML
+    private TextField usernameField;
+    @FXML
+    private PasswordField passwordField;
+    @FXML
+    private Button loginButton;
+    @FXML
+    private Button loginButton1;
+    @FXML
+    private Text statusMessage;
 
     @FXML
     public void initialize() {
@@ -78,12 +88,13 @@ public class Login2Controller {
 
     private void navegarPara(String fxml, boolean maximizado) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
+            FXMLLoader loader = loaderFactory.create(fxml);
             Parent root = loader.load();
             Stage stage = (Stage) loginButton.getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.setResizable(false);
-            if (maximizado) stage.setMaximized(true);
+            if (maximizado)
+                stage.setMaximized(true);
             stage.show();
         } catch (Exception e) {
             mostrarErro("Erro ao carregar tela: " + e.getMessage());
