@@ -1,10 +1,9 @@
 package main.controllers;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -14,97 +13,43 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import main.database.DatabaseConnection;
-
-import org.springframework.stereotype.Component;
+import main.database.auth.UserAuth;
+import main.util.FXMLLoaderFactory;
 
 @Component
 public class Login2Controller {
+
+    @Autowired
+    private UserAuth userAuth;
+
+    @Autowired
+    private FXMLLoaderFactory loaderFactory;
 
     private double xOffset = 0;
     private double yOffset = 0;
 
     @FXML
     private TextField usernameField;
-
     @FXML
     private PasswordField passwordField;
-
     @FXML
     private Button loginButton;
-
     @FXML
-    private Button loginButton1; // Botão Fechar
-
+    private Button loginButton1;
     @FXML
     private Text statusMessage;
 
     @FXML
     public void initialize() {
-
         usernameField.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
                 Stage stage = (Stage) newScene.getWindow();
                 if (stage != null) {
                     stage.setResizable(false);
-                    javafx.application.Platform.runLater(() -> {
-                        stage.centerOnScreen();
-                    });
+                    Platform.runLater(stage::centerOnScreen);
                 }
             }
         });
-    }
-
-    private boolean authenticateUser(Integer username, String password) {
-        try {
-            Connection db = DatabaseConnection.getConnectionMercado();
-
-            if (db != null) {
-
-                // ATUALIZADO: agora consulta tabela 'usuarios' em vez de 'licencas'
-                String query = "SELECT * FROM usuarios WHERE id_usuario = ? AND ativo = TRUE";
-                PreparedStatement stmt = db.prepareStatement(query);
-
-                stmt.setInt(1, username);
-                ResultSet rs = stmt.executeQuery();
-
-                if (rs.next()) {
-                    // ATUALIZADO: campo agora é 'senha_hash' em vez de 'senha_usuario'
-                    String dbPassword = rs.getString("senha_hash");
-
-                    // TODO: Quando implementar hash de verdade (bcrypt/argon2),
-                    // substituir esta comparação por BCrypt.checkpw(password, dbPassword)
-                    if (dbPassword.equals(password)) {
-                        statusMessage.setText("Login realizado com sucesso!");
-                        statusMessage.setVisible(true);
-
-                        // Verificar se usuário está bloqueado
-                        if (rs.getBoolean("bloqueado")) {
-                            statusMessage.setText("Usuário bloqueado. Contate o administrador.");
-                            statusMessage.setVisible(true);
-                            return false;
-                        }
-
-                        return true;
-                    } else {
-                        statusMessage.setText("Credenciais inválidas.");
-                        statusMessage.setVisible(true);
-                    }
-                } else {
-                    statusMessage.setText("Usuário não encontrado ou inativo.");
-                    statusMessage.setVisible(true);
-                }
-
-                rs.close();
-                stmt.close();
-            }
-
-        } catch (SQLException e) {
-            statusMessage.setText("Erro ao conectar ao banco de dados: " + e.getMessage());
-            statusMessage.setVisible(true);
-        }
-
-        return false;
     }
 
     @FXML
@@ -113,72 +58,52 @@ public class Login2Controller {
         String password = passwordField.getText().trim();
 
         if (username.isEmpty()) {
-            statusMessage.setText("Nome de usuário não pode estar vazio.");
-            statusMessage.setVisible(true);
+            mostrarErro("ID de usuário não pode estar vazio.");
             return;
         }
 
         if (password.isEmpty()) {
-            statusMessage.setText("Senha não pode estar vazia.");
-            statusMessage.setVisible(true);
+            mostrarErro("Senha não pode estar vazia.");
             return;
         }
 
         try {
             Integer userId = Integer.parseInt(username);
 
-            if (authenticateUser(userId, password)) {
-                try {
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/main/view/MainScreen.fxml"));
-                    Parent root = loader.load();
-                    Scene scene = new Scene(root);
-
-                    if (loginButton.getScene() != null && loginButton.getScene().getWindow() != null) {
-                        Stage stage = (Stage) loginButton.getScene().getWindow();
-                        stage.setScene(scene);
-                        stage.setResizable(false);
-                        stage.show();
-                    } else {
-                        statusMessage.setText("Erro: Janela não está disponível.");
-                        statusMessage.setVisible(true);
-                    }
-                } catch (Exception e) {
-                    statusMessage.setText("Erro ao carregar a tela principal: " + e.getMessage());
-                    statusMessage.setVisible(true);
-                    e.printStackTrace();
-                }
+            if (userAuth.authenticate(userId, password)) {
+                navegarPara("/main/view/MainScreen.fxml", true);
+            } else {
+                mostrarErro("Credenciais inválidas ou usuário bloqueado.");
             }
 
         } catch (NumberFormatException e) {
-            statusMessage.setText("ID de usuário inválido.");
-            statusMessage.setVisible(true);
-            return;
+            mostrarErro("ID de usuário deve ser numérico.");
         }
     }
 
     @FXML
     private void handleMainScreenLink() {
+        navegarPara("/main/view/MainScreen.fxml", true);
+    }
+
+    private void navegarPara(String fxml, boolean maximizado) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/main/view/MainScreen.fxml"));
+            FXMLLoader loader = loaderFactory.create(fxml);
             Parent root = loader.load();
-            Scene scene = new Scene(root);
-
-            if (loginButton.getScene() != null && loginButton.getScene().getWindow() != null) {
-                Stage stage = (Stage) loginButton.getScene().getWindow();
-                stage.setResizable(false);
-                stage.centerOnScreen();
-                stage.setScene(scene);
-
+            Stage stage = (Stage) loginButton.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setResizable(false);
+            if (maximizado)
                 stage.setMaximized(true);
-                stage.show();
-            } else {
-                statusMessage.setText("Erro: Janela não está disponível.");
-                statusMessage.setVisible(true);
-            }
+            stage.show();
         } catch (Exception e) {
-            statusMessage.setText("Erro ao voltar para login: " + e.getMessage());
-            statusMessage.setVisible(true);
+            mostrarErro("Erro ao carregar tela: " + e.getMessage());
         }
+    }
+
+    private void mostrarErro(String mensagem) {
+        statusMessage.setText(mensagem);
+        statusMessage.setVisible(true);
     }
 
     @FXML
@@ -211,5 +136,4 @@ public class Login2Controller {
         stage.setX(event.getScreenX() - xOffset);
         stage.setY(event.getScreenY() - yOffset);
     }
-
 }
