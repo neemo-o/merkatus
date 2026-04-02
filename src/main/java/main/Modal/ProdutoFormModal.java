@@ -4,10 +4,16 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+
 import java.math.BigDecimal;
+
+
 public class ProdutoFormModal {
 
     private Stage stage;
@@ -24,7 +30,9 @@ public class ProdutoFormModal {
     private CheckBox chkFracionamento;
 
     private TextField txtEstoqueAtual, txtEstoqueMinimo, txtEstoqueMaximo;
-    private CheckBox chkControlaEstoque, chkBalanca;
+    private CheckBox chkControlaEstoque;
+
+    private double xOff, yOff;
 
     private TextField txtNcm, txtCest, txtCfop;
     private TextField txtCstIcms, txtCsosn;
@@ -37,6 +45,7 @@ public class ProdutoFormModal {
         stage = new Stage();
         stage.initOwner(owner);
         stage.initModality(Modality.WINDOW_MODAL);
+        stage.initStyle(StageStyle.UNDECORATED);
         stage.setTitle(produto == null ? "Novo Produto" : "Editar Produto");
 
         TabPane tabPane = new TabPane();
@@ -59,7 +68,28 @@ public class ProdutoFormModal {
         rodape.setPadding(new Insets(10));
         rodape.setAlignment(Pos.CENTER_RIGHT);
 
-        VBox root = new VBox(tabPane, rodape);
+        ImageView logo = new ImageView(new Image(getClass().getResourceAsStream("/main/resources/logo.png")));
+        logo.setFitHeight(22); logo.setFitWidth(22); logo.setPreserveRatio(true);
+
+        Label titulo = new Label(produto == null ? "Novo Produto" : "Editar Produto");
+        titulo.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+
+        Region espaco = new Region();
+        HBox.setHgrow(espaco, Priority.ALWAYS);
+
+        Button btnFechar = new Button("✕");
+        btnFechar.setStyle("-fx-background-color: transparent; -fx-text-fill: rgba(255,255,255,0.8); -fx-font-size: 12; -fx-cursor: hand; -fx-border-width: 0; -fx-padding: 0;");
+        btnFechar.setOnAction(e -> stage.close());
+
+        HBox topBar = new HBox(8, logo, titulo, espaco, btnFechar);
+        topBar.setStyle("-fx-background-color: #194e8f; -fx-padding: 0 4 0 10; -fx-alignment: CENTER_LEFT;");
+
+        // Drag
+        topBar.setOnMousePressed(e -> { xOff = stage.getX() - e.getScreenX(); yOff = stage.getY() - e.getScreenY(); });
+        topBar.setOnMouseDragged(e -> { stage.setX(e.getScreenX() + xOff); stage.setY(e.getScreenY() + yOff); });
+
+
+        VBox root = new VBox(topBar, tabPane, rodape);
         stage.setScene(new Scene(root, 700, 500));
 
         if (produto != null) preencherCampos();
@@ -137,7 +167,6 @@ public class ProdutoFormModal {
         txtEstoqueMinimo   = new TextField();
         txtEstoqueMaximo   = new TextField();
         chkControlaEstoque = new CheckBox("Controla estoque");
-        chkBalanca         = new CheckBox("Balança");
 
         chkControlaEstoque.setSelected(true);
 
@@ -151,7 +180,6 @@ public class ProdutoFormModal {
         grid.addRow(1, new Label("Estoque mínimo:"), txtEstoqueMinimo);
         grid.addRow(2, new Label("Estoque máximo:"), txtEstoqueMaximo);
         grid.addRow(3, chkControlaEstoque);
-        grid.addRow(4, chkBalanca);
 
         return grid;
     }
@@ -208,23 +236,22 @@ public class ProdutoFormModal {
     private void preencherCampos() {
         txtDescricao.setText(produto.getDescricao());
         txtCodigoBarras.setText(produto.getCodigoBarras());
-        cbUnidade.setValue(produto.getUnidadeMedida());
-        cbCategoria.setValue(produto.getCategoria());
-        cbFornecedor.setValue(produto.getFornecedor());
+        cbUnidade.setValue(findUnidadeMedida(produto.getUnidadeMedida()));
+        cbCategoria.setValue(CategoriaDAO.findById(produto.getIdCategoria()));
+        cbFornecedor.setValue(FornecedorDAO.findById(produto.getIdFornecedor()));
         chkAtivo.setSelected(produto.isAtivo());
 
-        txtPrecoCusto.setText(String.valueOf(produto.getPrecoCusto()));
-        txtPrecoVenda.setText(String.valueOf(produto.getPrecoVenda()));
-        txtMargemLucro.setText(String.valueOf(produto.getMargemLucro()));
-        txtPesoLiquido.setText(String.valueOf(produto.getPesoLiquido()));
-        txtPesoBruto.setText(String.valueOf(produto.getPesoBruto()));
+        txtPrecoCusto.setText(produto.getPrecoCusto() != null ? produto.getPrecoCusto().toString() : "");
+        txtPrecoVenda.setText(produto.getPrecoVenda() != null ? produto.getPrecoVenda().toString() : "");
+        txtMargemLucro.setText(produto.getMargemLucro() != null ? produto.getMargemLucro().toString() : "");
+        txtPesoLiquido.setText(produto.getPesoLiquido() != null ? produto.getPesoLiquido().toString() : "");
+        txtPesoBruto.setText(produto.getPesoBruto() != null ? produto.getPesoBruto().toString() : "");
         chkFracionamento.setSelected(produto.isPermiteFracionamento());
 
-        txtEstoqueAtual.setText(String.valueOf(produto.getEstoqueAtual()));
-        txtEstoqueMinimo.setText(String.valueOf(produto.getEstoqueMinimo()));
-        txtEstoqueMaximo.setText(String.valueOf(produto.getEstoqueMaximo()));
+        txtEstoqueAtual.setText(produto.getEstoqueAtual() != null ? produto.getEstoqueAtual().toString() : "");
+        txtEstoqueMinimo.setText(produto.getEstoqueMinimo() != null ? produto.getEstoqueMinimo().toString() : "");
+        txtEstoqueMaximo.setText(produto.getEstoqueMaximo() != null ? produto.getEstoqueMaximo().toString() : "");
         chkControlaEstoque.setSelected(produto.isControlaEstoque());
-        chkBalanca.setSelected(produto.isBalanca());
 
         txtNcm.setText(produto.getNcm());
         txtCest.setText(produto.getCest());
@@ -234,10 +261,20 @@ public class ProdutoFormModal {
         txtCstPis.setText(produto.getCstPis());
         txtCstCofins.setText(produto.getCstCofins());
         txtCstIpi.setText(produto.getCstIpi());
-        txtAliqIcms.setText(String.valueOf(produto.getAliqIcms()));
-        txtAliqPis.setText(String.valueOf(produto.getAliqPis()));
-        txtAliqCofins.setText(String.valueOf(produto.getAliqCofins()));
-        txtAliqIpi.setText(String.valueOf(produto.getAliqIpi()));
+        txtAliqIcms.setText(produto.getAliqIcms() != null ? produto.getAliqIcms().toString() : "");
+        txtAliqPis.setText(produto.getAliqPis() != null ? produto.getAliqPis().toString() : "");
+        txtAliqCofins.setText(produto.getAliqCofins() != null ? produto.getAliqCofins().toString() : "");
+        txtAliqIpi.setText(produto.getAliqIpi() != null ? produto.getAliqIpi().toString() : "");
+    }
+
+    private UnidadeMedida findUnidadeMedida(String sigla) {
+        if (sigla == null) {
+            return null;
+        }
+        return cbUnidade.getItems().stream()
+                .filter(u -> u != null && sigla.equals(u.getSigla()))
+                .findFirst()
+                .orElse(null);
     }
 
     private void salvar() {
@@ -261,7 +298,6 @@ public class ProdutoFormModal {
         produto.setEstoqueMinimo(parseBigDecimal(txtEstoqueMinimo.getText()));
         produto.setEstoqueMaximo(parseBigDecimal(txtEstoqueMaximo.getText()));
         produto.setControlaEstoque(chkControlaEstoque.isSelected());
-        produto.setBalanca(chkBalanca.isSelected());
 
         produto.setNcm(txtNcm.getText());
         produto.setCest(txtCest.getText());

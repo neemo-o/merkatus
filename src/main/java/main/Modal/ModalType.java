@@ -1,4 +1,4 @@
 package main.Modal;
 public enum ModalType {
-    Produto
+    PRODUTO
 }

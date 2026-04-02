@@ -7,6 +7,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.collections.FXCollections;
@@ -34,6 +35,8 @@ public abstract class BaseModal<T> {
             stage.initModality(Modality.WINDOW_MODAL);
             stage.setTitle(title);
 
+            stage.getIcons().add(new Image(getClass().getResourceAsStream("/main/resources/logo.png")));
+
             FXMLLoader loader = new FXMLLoader(
                 getClass().getResource(fxmlPath)
             );
@@ -41,6 +44,24 @@ public abstract class BaseModal<T> {
 
             Parent root = loader.load();
             stage.setScene(new Scene(root));
+            stage.setResizable(true);
+
+            if (owner != null) {
+                double maxWidth = owner.getWidth() * 0.95;
+                double maxHeight = owner.getHeight() * 0.9;
+                double prefWidth = Math.min(1100, Math.max(800, maxWidth * 0.9));
+                double prefHeight = Math.min(760, Math.max(600, maxHeight * 0.9));
+
+                stage.setMaxWidth(maxWidth);
+                stage.setMaxHeight(maxHeight);
+                stage.setWidth(prefWidth);
+                stage.setHeight(prefHeight);
+                stage.setX(owner.getX() + (owner.getWidth() - stage.getWidth()) / 2);
+                stage.setY(owner.getY() + (owner.getHeight() - stage.getHeight()) / 2);
+            } else {
+                stage.sizeToScene();
+                stage.centerOnScreen();
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -50,6 +71,7 @@ public abstract class BaseModal<T> {
     @FXML
     public void initialize() {
         tableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        tableView.getColumns().clear();
         configureColumns(tableView);
 
         txtBusca.textProperty().addListener((obs, old, val) -> applyFilters());

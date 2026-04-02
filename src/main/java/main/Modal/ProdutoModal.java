@@ -1,17 +1,30 @@
 package main.Modal;
 
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.*;
+import javafx.scene.text.TextAlignment;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import java.math.BigDecimal;
 import java.util.List;
+import javafx.scene.control.cell.PropertyValueFactory;
+
 public class ProdutoModal extends BaseModal<Produto> {
 
     @FXML private ComboBox<Categoria> cbCategoria;
     @FXML private ComboBox<Fornecedor> cbFornecedor;
     @FXML private CheckBox chkAtivo;
     @FXML private CheckBox chkControlaEstoque;
-    @FXML private CheckBox chkBalanca;
+    @FXML private Button btnEditar;
+    @FXML private Button btnExcluir;
+    
 
     public ProdutoModal(Stage owner) {
         super(owner, "Produtos", "/main/view/ProdutoModal.fxml");
@@ -31,7 +44,15 @@ public class ProdutoModal extends BaseModal<Produto> {
 
         chkAtivo.setOnAction(e -> applyFilters());
         chkControlaEstoque.setOnAction(e -> applyFilters());
-        chkBalanca.setOnAction(e -> applyFilters());
+
+        btnEditar.setDisable(true);
+        btnExcluir.setDisable(true);
+
+        tableView.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
+            boolean enabled = newValue != null;
+            btnEditar.setDisable(!enabled);
+            btnExcluir.setDisable(!enabled);
+        });
 
         // Chama o initialize da BaseModal para configurar tabela e busca
         super.initialize();
@@ -106,9 +127,8 @@ public class ProdutoModal extends BaseModal<Produto> {
 
         boolean ativoOk      = !chkAtivo.isSelected()          || p.isAtivo();
         boolean estoqueOk    = !chkControlaEstoque.isSelected() || p.isControlaEstoque();
-        boolean balancaOk    = !chkBalanca.isSelected()         || p.isBalanca();
 
-        return categoriaOk && fornecedorOk && ativoOk && estoqueOk && balancaOk;
+        return categoriaOk && fornecedorOk && ativoOk && estoqueOk;
     }
 
     @Override
@@ -117,7 +137,6 @@ public class ProdutoModal extends BaseModal<Produto> {
         cbFornecedor.setValue(null);
         chkAtivo.setSelected(false);
         chkControlaEstoque.setSelected(false);
-        chkBalanca.setSelected(false);
     }
 
     @Override
@@ -132,20 +151,99 @@ public class ProdutoModal extends BaseModal<Produto> {
     @FXML
     protected void abrirFormEdicao() {
         Produto selected = tableView.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            ProdutoFormModal form = new ProdutoFormModal(stage, selected);
-            form.show();
-            loadData();
+        if (selected == null) {
+            exibirAlerta("Selecione um produto para editar.");
+            return;
         }
+        ProdutoFormModal form = new ProdutoFormModal(stage, selected);
+        form.show();
+        loadData();
     }
 
     @Override
     @FXML
     protected void excluirSelecionado() {
         Produto selected = tableView.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            ProdutoDAO.delete(selected.getIdProduto());
-            loadData();
+        if (selected == null) {
+            exibirAlerta("Selecione um produto para excluir.");
+            return;
         }
+
+        if (!mostrarConfirmacaoExclusao(selected)) {
+            return;
+        }
+
+        ProdutoDAO.delete(selected.getIdProduto());
+        loadData();
+    }
+
+    private boolean mostrarConfirmacaoExclusao(Produto produto) {
+        try {
+            Stage confirmStage = new Stage();
+            confirmStage.initOwner(stage);
+            confirmStage.initModality(Modality.WINDOW_MODAL);
+            confirmStage.initStyle(StageStyle.UNDECORATED);
+            confirmStage.setTitle("Confirmar exclusão");
+            confirmStage.setResizable(false);
+
+            HBox topBar = new HBox();
+            topBar.setMinHeight(8);
+            topBar.setPrefHeight(8);
+            topBar.setMaxWidth(Double.MAX_VALUE);
+            topBar.setStyle("-fx-background-color: #194e8f;");
+
+            Label mensagem = new Label("Deseja excluir o produto '" +
+                    (produto.getDescricao() != null ? produto.getDescricao() : "sem nome") + "'?");
+            mensagem.setWrapText(true);
+            mensagem.setTextAlignment(TextAlignment.CENTER);
+            mensagem.setStyle("-fx-font-size: 12; -fx-font-family: 'Segoe UI'; -fx-text-fill: #333333;");
+            mensagem.setMaxWidth(340);
+
+            Button btnConfirmar = new Button("Confirmar");
+            btnConfirmar.setStyle("-fx-background-color: #194e8f; -fx-text-fill: white; -fx-font-family: 'Segoe UI'; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 8 20;");
+
+            Button btnCancelar = new Button("Cancelar");
+            btnCancelar.setStyle("-fx-background-color: transparent; -fx-border-color: #194e8f; -fx-text-fill: #194e8f; -fx-font-family: 'Segoe UI'; -fx-cursor: hand; -fx-padding: 8 20; -fx-border-width: 1;");
+
+            HBox botoes = new HBox(10, btnCancelar, btnConfirmar);
+            botoes.setAlignment(Pos.CENTER);
+            botoes.setPadding(new Insets(12, 0, 0, 0));
+
+            VBox content = new VBox(16, topBar, mensagem, botoes);
+            content.setStyle("-fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1; -fx-padding: 0 0 16 0;");
+            content.setPrefWidth(380);
+            VBox.setMargin(mensagem, new Insets(16, 16, 0, 16));
+            VBox.setMargin(botoes, new Insets(16, 16, 0, 16));
+
+            Scene scene = new Scene(content);
+            confirmStage.setScene(scene);
+            confirmStage.sizeToScene();
+
+            final boolean[] confirmed = {false};
+            btnConfirmar.setOnAction(e -> {
+                confirmed[0] = true;
+                confirmStage.close();
+            });
+            btnCancelar.setOnAction(e -> confirmStage.close());
+
+            confirmStage.showAndWait();
+            return confirmed[0];
+        } catch (Exception e) {
+            Alert fallback = new Alert(Alert.AlertType.CONFIRMATION);
+            fallback.setTitle("Confirmar exclusão");
+            fallback.setHeaderText(null);
+            fallback.setContentText("Deseja excluir o produto '" +
+                    (produto.getDescricao() != null ? produto.getDescricao() : "sem nome") + "'?");
+            fallback.initOwner(stage);
+            return fallback.showAndWait().filter(response -> response == ButtonType.OK).isPresent();
+        }
+    }
+
+    private void exibirAlerta(String mensagem) {
+        Alert alerta = new Alert(Alert.AlertType.INFORMATION);
+        alerta.setHeaderText(null);
+        alerta.setContentText(mensagem);
+        alerta.initOwner(stage);
+        alerta.showAndWait();
     }
 }
