@@ -1,5 +1,8 @@
 package main.controllers;
 
+import java.math.BigDecimal;
+
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -16,8 +19,6 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -25,18 +26,13 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import main.Modal.Categoria; 
-import main.Modal.Fornecedor;
-import main.Modal.FornecedorDAO;
-import main.Modal.Produto;
-import main.Modal.ProdutoDAO;
-import main.Modal.UnidadeMedida;
-import main.Modal.UnidadeMedidaDAO;
-import org.springframework.stereotype.Component;
+import main.database.DAOs.FornecedorDAO;
+import main.database.DAOs.ProdutoDAO;
+import main.database.DAOs.UnidadeMedidaDAO;
+import main.models.Fornecedor;
+import main.models.Produto;
+import main.models.UnidadeMedida;
 
-import java.math.BigDecimal;
-
-@Component
 public class ProdutosController {
 
     @FXML
@@ -128,21 +124,32 @@ public class ProdutosController {
         colId.setCellValueFactory(new PropertyValueFactory<>("idProduto"));
         colCodigo.setCellValueFactory(new PropertyValueFactory<>("codigoBarras"));
         colNome.setCellValueFactory(new PropertyValueFactory<>("descricao"));
-        colCategoria.setCellValueFactory(new PropertyValueFactory<>("unidadeMedida"));
+        colCategoria.setCellValueFactory(cell -> {
+            String sigla = cell.getValue().getUnidadeMedida();
+            UnidadeMedida unidade = findUnidadeMedida(sigla);
+            String texto = (unidade != null && unidade.getDescricao() != null)
+                    ? unidade.getDescricao()
+                    : (sigla != null ? sigla : "");
+            return new SimpleStringProperty(texto);
+        });
         colPreco.setCellValueFactory(new PropertyValueFactory<>("precoVenda"));
         colEstoque.setCellValueFactory(new PropertyValueFactory<>("estoqueAtual"));
-        colFornecedor.setCellValueFactory(new PropertyValueFactory<>("nomeFornecedor"));
+        colFornecedor.setCellValueFactory(cell -> {
+            Fornecedor fornecedor = findFornecedor(cell.getValue().getIdFornecedor());
+            String nome = fornecedor != null ? fornecedor.getNomeFantasia() : "";
+            return new SimpleStringProperty(nome);
+        });
     }
 
     private void carregarProdutos() {
-        produtos.setAll(ProdutoDAO.findAll());
+        produtos.setAll(ProdutoDAO.findAllStatic());
         tableProdutos.setItems(produtos);
         atualizarTotal();
     }
 
     private void carregarCombos() {
-        cbCategoria.getItems().setAll(UnidadeMedidaDAO.findAll());
-        cbFornecedor.getItems().setAll(FornecedorDAO.findAll());
+        cbCategoria.getItems().setAll(UnidadeMedidaDAO.findAllStatic());
+        cbFornecedor.getItems().setAll(FornecedorDAO.findAllStatic());
     }
 
     private void aplicarFiltro(String filtro) {
@@ -150,11 +157,12 @@ public class ProdutosController {
             tableProdutos.setItems(produtos);
         } else {
             String termo = filtro.toLowerCase().trim();
-            tableProdutos.setItems(produtos.filtered(p ->
-                (p.getDescricao() != null && p.getDescricao().toLowerCase().contains(termo))
-                || (p.getCodigoBarras() != null && p.getCodigoBarras().toLowerCase().contains(termo))
-                || (p.getNomeFornecedor() != null && p.getNomeFornecedor().toLowerCase().contains(termo))
-            ));
+            tableProdutos.setItems(produtos.filtered(p -> {
+                String nomeFornecedor = getNomeFornecedor(p).toLowerCase();
+                return (p.getDescricao() != null && p.getDescricao().toLowerCase().contains(termo))
+                    || (p.getCodigoBarras() != null && p.getCodigoBarras().toLowerCase().contains(termo))
+                    || (nomeFornecedor != null && nomeFornecedor.contains(termo));
+            }));
         }
         atualizarTotal();
     }
@@ -197,7 +205,7 @@ public class ProdutosController {
             return;
         }
 
-        ProdutoDAO.delete(selecionado.getIdProduto());
+        ProdutoDAO.deleteByIdStatic(selecionado.getIdProduto());
         carregarProdutos();
         if (!tableProdutos.getItems().contains(selecionado)) {
             btnEditar.setDisable(true);
@@ -279,15 +287,26 @@ public class ProdutosController {
 
         produtoEditando.setCodigoBarras(txtCodigo.getText());
         produtoEditando.setDescricao(txtNome.getText());
-        produtoEditando.setUnidadeMedida(cbCategoria.getValue());
+
+        UnidadeMedida selectedUnidade = cbCategoria.getValue();
+        if (selectedUnidade != null) {
+            produtoEditando.setUnidadeMedida(selectedUnidade.getSigla());
+            produtoEditando.setIdUnidadeMedida(selectedUnidade.getIdUnidade());
+        } else {
+            produtoEditando.setUnidadeMedida(null);
+            produtoEditando.setIdUnidadeMedida(null);
+        }
+
         produtoEditando.setPrecoVenda(parseBigDecimal(txtPreco.getText()));
         produtoEditando.setEstoqueAtual(parseInteger(txtEstoque.getText()));
-        produtoEditando.setFornecedor(cbFornecedor.getValue());
+
+        Fornecedor selectedFornecedor = cbFornecedor.getValue();
+        produtoEditando.setIdFornecedor(selectedFornecedor != null ? selectedFornecedor.getIdFornecedor() : null);
 
         if (produtoEditando.getIdProduto() == null) {
-            ProdutoDAO.insert(produtoEditando);
+            ProdutoDAO.insertStatic(produtoEditando);
         } else {
-            ProdutoDAO.update(produtoEditando);
+            ProdutoDAO.updateStatic(produtoEditando);
         }
 
         carregarProdutos();
@@ -339,6 +358,13 @@ public class ProdutosController {
             return false;
         }
         return true;
+    }
+
+    private String getNomeFornecedor(Produto produto) {
+        Fornecedor fornecedor = findFornecedor(produto.getIdFornecedor());
+        return fornecedor != null && fornecedor.getNomeFantasia() != null
+                ? fornecedor.getNomeFantasia()
+                : "";
     }
 
     private UnidadeMedida findUnidadeMedida(String sigla) {

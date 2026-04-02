@@ -1,4 +1,4 @@
-package main.database;
+package main.database.DAOs;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -6,6 +6,7 @@ import java.sql.SQLException;
 
 import org.springframework.stereotype.Component;
 
+import main.database.GenericDAO;
 import main.models.Endereco;
 
 @Component

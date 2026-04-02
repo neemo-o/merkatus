@@ -1,7 +1,8 @@
-package main.database;
+package main.database.DAOs;
 
 import org.springframework.stereotype.Component;
 
+import main.database.GenericDAO;
 import main.models.Empresa;
 
 @Component

@@ -1,20 +1,33 @@
 package main.Modal;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import java.math.BigDecimal;
-import java.util.List;
-import javafx.scene.control.cell.PropertyValueFactory;
+import main.database.DAOs.CategoriaDAO;
+import main.database.DAOs.FornecedorDAO;
+import main.database.DAOs.ProdutoDAO;
+import main.models.Categoria;
+import main.models.Fornecedor;
+import main.models.Produto;
 
 public class ProdutoModal extends BaseModal<Produto> {
 
@@ -35,11 +48,11 @@ public class ProdutoModal extends BaseModal<Produto> {
     public void initialize() {
         // Carrega os combos de filtro
         cbCategoria.getItems().add(null);
-        cbCategoria.getItems().addAll(CategoriaDAO.findAll());
+        cbCategoria.getItems().addAll(CategoriaDAO.findAllStatic());
         cbCategoria.setOnAction(e -> applyFilters());
 
         cbFornecedor.getItems().add(null);
-        cbFornecedor.getItems().addAll(FornecedorDAO.findAll());
+        cbFornecedor.getItems().addAll(FornecedorDAO.findAllStatic());
         cbFornecedor.setOnAction(e -> applyFilters());
 
         chkAtivo.setOnAction(e -> applyFilters());
@@ -60,7 +73,7 @@ public class ProdutoModal extends BaseModal<Produto> {
 
     @Override
     protected List<Produto> fetchFromDatabase() {
-        return ProdutoDAO.findAll();
+        return ProdutoDAO.findAllStatic();
     }
 
     @Override
@@ -173,7 +186,7 @@ public class ProdutoModal extends BaseModal<Produto> {
             return;
         }
 
-        ProdutoDAO.delete(selected.getIdProduto());
+        ProdutoDAO.deleteByIdStatic(selected.getIdProduto());
         loadData();
     }
 
