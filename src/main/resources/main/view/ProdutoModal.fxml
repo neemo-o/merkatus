@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane maxHeight="Infinity" maxWidth="Infinity"
+            style="-fx-background-color: #f0f0f0;"
+            xmlns="http://javafx.com/javafx/25"
+            xmlns:fx="http://javafx.com/fxml/1">
+
+    <center>
+        <VBox spacing="0">
+            <!-- Barra de filtros -->
+            <HBox spacing="8" alignment="CENTER_LEFT"
+                  style="-fx-background-color: #f5f5f5;
+                         -fx-border-color: #d8d8d8;
+                         -fx-border-width: 0 0 1 0;
+                         -fx-padding: 10 12;">
+
+                <Label text="Buscar:"
+                       style="-fx-font-size: 11; -fx-font-family: 'Segoe UI';
+                              -fx-text-fill: #333333;"/>
+                <TextField fx:id="txtBusca"
+                           promptText="Descrição ou código de barras..."
+                           prefWidth="200" prefHeight="24"
+                           style="-fx-font-size: 11; -fx-font-family: 'Segoe UI';
+                                  -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1;"/>
+
+                <Separator orientation="VERTICAL" style="-fx-background-color: #cccccc;"/>
+
+                <Label text="Categoria:"
+                       style="-fx-font-size: 11; -fx-font-family: 'Segoe UI';
+                              -fx-text-fill: #333333;"/>
+                <ComboBox fx:id="cbCategoria"
+                          promptText="Todas"
+                          prefWidth="130" prefHeight="24"
+                          style="-fx-font-size: 11; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1;"/>
+
+                <Label text="Fornecedor:"
+                       style="-fx-font-size: 11; -fx-font-family: 'Segoe UI';
+                              -fx-text-fill: #333333;"/>
+                <ComboBox fx:id="cbFornecedor"
+                          promptText="Todos"
+                          prefWidth="130" prefHeight="24"
+                          style="-fx-font-size: 11; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1;"/>
+
+                <Separator orientation="VERTICAL"/>
+
+                <CheckBox fx:id="chkAtivo" text="Apenas ativos"
+                          style="-fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-text-fill: #333333;"/>
+                <CheckBox fx:id="chkControlaEstoque" text="Controla estoque"
+                          style="-fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-text-fill: #333333;"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button text="Limpar Filtros" onAction="#limparFiltros"
+                        prefHeight="24"
+                        style="-fx-background-color: transparent;
+                               -fx-border-color: #194e8f;
+                               -fx-text-fill: #194e8f;
+                               -fx-border-width: 1;
+                               -fx-font-size: 11;
+                               -fx-font-family: 'Segoe UI';
+                               -fx-cursor: hand;"/>
+            </HBox>
+
+            <!-- Contador -->
+            <HBox style="-fx-background-color: #f5f5f5;
+                         -fx-border-color: #d8d8d8;
+                         -fx-border-width: 0 0 1 0;
+                         -fx-padding: 6 10;">
+                <Label fx:id="lblTotalRegistros" text="Registros: 0"
+                       style="-fx-font-size: 11; -fx-font-family: 'Segoe UI';
+                              -fx-text-fill: #333333;"/>
+            </HBox>
+
+            <SplitPane dividerPositions="0.87">
+
+            <ScrollPane fitToHeight="true"
+                        hbarPolicy="AS_NEEDED"
+                        vbarPolicy="NEVER"
+                        style="-fx-background-color: transparent;
+                               -fx-border-color: transparent;">
+
+                <TableView fx:id="tableView" prefHeight="600"
+                           style="-fx-background-color: white;">
+                    <columns>
+                        <TableColumn fx:id="colId"         text="ID"          prefWidth="55"/>
+                        <TableColumn fx:id="colCodigo"     text="Cód. Barras" prefWidth="140"/>
+                        <TableColumn fx:id="colDescricao"  text="Descrição"   prefWidth="260"/>
+                        <TableColumn fx:id="colUnidade"    text="Unidade"     prefWidth="90"/>
+                        <TableColumn fx:id="colPrecoCusto" text="Preço Custo" prefWidth="120"/>
+                        <TableColumn fx:id="colPrecoVenda" text="Preço Venda" prefWidth="120"/>
+                        <TableColumn fx:id="colEstoque"    text="Estoque"     prefWidth="90"/>
+                        <TableColumn fx:id="colFornecedor" text="Fornecedor"  prefWidth="180"/>
+                        <TableColumn fx:id="colAtivo"      text="Ativo"       prefWidth="70"/>
+                    </columns>
+                </TableView>
+            </ScrollPane>
+
+            <!-- Painel lateral de botões -->
+            <VBox spacing="6" alignment="TOP_CENTER"
+                  minWidth="110" prefWidth="150"
+                  SplitPane.resizableWithParent="false"
+                  style="-fx-background-color: #f5f5f5;
+                         -fx-border-color: #cccccc;
+                         -fx-border-width: 0 0 0 1;">
+                <padding><Insets top="12" right="10" bottom="12" left="10"/></padding>
+
+                <Button fx:id="btnNovo" text="Novo" onAction="#abrirFormNovo"
+                        maxWidth="Infinity" prefHeight="32"
+                        style="-fx-background-color: #194e8f;
+                               -fx-text-fill: white;
+                               -fx-font-weight: bold;
+                               -fx-font-size: 11;
+                               -fx-font-family: 'Segoe UI';
+                               -fx-cursor: hand;"/>
+
+                <Button fx:id="btnEditar" text="Editar" onAction="#abrirFormEdicao"
+                        maxWidth="Infinity" prefHeight="32"
+                        style="-fx-background-color: transparent;
+                               -fx-border-color: #cccccc;
+                               -fx-border-width: 1;
+                               -fx-font-size: 11;
+                               -fx-font-family: 'Segoe UI';
+                               -fx-cursor: hand;"/>
+
+                <Button fx:id="btnExcluir" text="Excluir" onAction="#excluirSelecionado"
+                        maxWidth="Infinity" prefHeight="32"
+                        style="-fx-background-color: transparent;
+                               -fx-border-color: #c0392b;
+                               -fx-text-fill: #c0392b;
+                               -fx-border-width: 1;
+                               -fx-font-size: 11;
+                               -fx-font-family: 'Segoe UI';
+                               -fx-cursor: hand;"/>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <Separator/>
+
+                <Button text="Confirmar" onAction="#confirmar"
+                        maxWidth="Infinity" prefHeight="32"
+                        style="-fx-background-color: #194e8f;
+                               -fx-text-fill: white;
+                               -fx-font-weight: bold;
+                               -fx-font-size: 11;
+                               -fx-font-family: 'Segoe UI';
+                               -fx-cursor: hand;"/>
+
+                <Button text="Cancelar" onAction="#cancelar"
+                        maxWidth="Infinity" prefHeight="32"
+                        style="-fx-background-color: transparent;
+                               -fx-border-color: #c0392b;
+                               -fx-text-fill: #c0392b;
+                               -fx-border-width: 1;
+                               -fx-font-size: 11;
+                               -fx-font-family: 'Segoe UI';
+                               -fx-cursor: hand;"/>
+            </VBox>
+            </SplitPane>
+        </VBox>
+    </center>
+    <bottom>
+        <HBox alignment="CENTER_LEFT" prefHeight="28" spacing="0"
+              style="-fx-background-color: #e4e4e4;
+                     -fx-border-color: #bbbbbb;
+                     -fx-border-width: 1 0 0 0;
+                     -fx-padding: 0 10;">
+            <Label fx:id="lblStatus" text=""
+                   style="-fx-text-fill: #555555;
+                          -fx-font-size: 11;
+                          -fx-font-family: 'Segoe UI';"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>
