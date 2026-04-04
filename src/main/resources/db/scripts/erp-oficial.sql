@@ -1,7 +1,7 @@
--- Active: 1764800155343@@127.0.0.1@5432@erp_oficial
+-- Active: 1761779476832@@127.0.0.1@5432@erp_oficial
 
-#   RODE O SCRIPT DEPOIS DE CRIAR A DATABASE COM O ESTE COMANDO ISOLADO
-#   CREATE DATABASE erp_oficial;
+-- RODE O SCRIPT DEPOIS DE CRIAR A DATABASE COM O ESTE COMANDO ISOLADO
+-- CREATE DATABASE erp_oficial;
 
 -- ========================================
 -- 1. EMPRESA (singleton — sempre 1 registro)
@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS empresa (
     data_atualizacao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 COMMENT ON TABLE empresa IS 'Singleton — dados da empresa dona deste banco local';
+
 -- ========================================
 -- 2. LICENÇA LOCAL (singleton — cache do banco principal)
 -- ========================================
@@ -64,6 +65,7 @@ CREATE TABLE IF NOT EXISTS licenca_local (
     data_atualizacao        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 COMMENT ON TABLE licenca_local IS 'Cache local da licença obtida do banco principal. Singleton.';
+
 -- ========================================
 -- 3. ENDEREÇOS (compartilhado por clientes e fornecedores)
 -- ========================================
@@ -79,6 +81,7 @@ CREATE TABLE IF NOT EXISTS enderecos (
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 COMMENT ON TABLE enderecos IS 'Endereços compartilhados por clientes e fornecedores';
+
 -- ========================================
 -- 4. FORNECEDOR
 -- ========================================
@@ -95,19 +98,68 @@ CREATE TABLE IF NOT EXISTS fornecedor (
     data_atualizacao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 COMMENT ON TABLE fornecedor IS 'Cadastro de fornecedores';
+
 -- ========================================
--- 5. CATEGORIAS (hierárquica)
+-- 5. TRIBUTAÇÃO PERFIL
+-- MOVIDA PARA ANTES DE categorias E produto
+-- pois ambas referenciam esta tabela via FK.
+-- ========================================
+CREATE TABLE IF NOT EXISTS tributacao_perfil (
+    id_tributacao            SERIAL PRIMARY KEY,
+    nome                     VARCHAR(100) NOT NULL,
+    descricao                TEXT,
+    ncm                      VARCHAR(8),
+    cest                     VARCHAR(7),
+    cst_icms                 VARCHAR(3),
+    csosn                    VARCHAR(4),
+    aliq_icms                DECIMAL(5, 2),
+    aliq_icms_st             DECIMAL(5, 2),
+    mva_st                   DECIMAL(5, 2),
+    cfop_venda               VARCHAR(4),
+    cfop_venda_interestadual VARCHAR(4),
+    cst_pis                  VARCHAR(2),
+    cst_cofins               VARCHAR(2),
+    aliq_pis                 DECIMAL(5, 4),
+    aliq_cofins              DECIMAL(5, 4),
+    cst_ipi                  VARCHAR(2),
+    aliq_ipi                 DECIMAL(5, 2),
+    ativo                    BOOLEAN NOT NULL DEFAULT TRUE,
+    data_cadastro            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_regime CHECK (
+        cst_icms IS NOT NULL OR csosn IS NOT NULL
+    )
+);
+CREATE INDEX IF NOT EXISTS idx_tributacao_ncm ON tributacao_perfil(ncm);
+
+-- ========================================
+-- 6. NCM TRIBUTAÇÃO (fallback por NCM nacional)
+-- ========================================
+CREATE TABLE IF NOT EXISTS ncm_tributacao (
+    id_ncm_tributacao   SERIAL PRIMARY KEY,
+    ncm                 VARCHAR(8) NOT NULL UNIQUE,
+    descricao_ncm       TEXT,
+    id_tributacao       INTEGER NOT NULL REFERENCES tributacao_perfil(id_tributacao),
+    data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_ncm_tributacao_ncm ON ncm_tributacao(ncm);
+
+-- ========================================
+-- 7. CATEGORIAS (hierárquica)
+-- Agora tributacao_perfil já existe — FK funciona.
 -- ========================================
 CREATE TABLE IF NOT EXISTS categorias (
-    id_categoria    SERIAL PRIMARY KEY,
-    parent_id       INTEGER REFERENCES categorias(id_categoria) ON DELETE SET NULL,
-    nome            VARCHAR(100) NOT NULL,
-    ativo           BOOLEAN NOT NULL DEFAULT TRUE,
-    data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id_categoria         SERIAL PRIMARY KEY,
+    parent_id            INTEGER REFERENCES categorias(id_categoria) ON DELETE SET NULL,
+    nome                 VARCHAR(100) NOT NULL,
+    id_tributacao_padrao INTEGER REFERENCES tributacao_perfil(id_tributacao),
+    ativo                BOOLEAN NOT NULL DEFAULT TRUE,
+    data_cadastro        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 COMMENT ON TABLE categorias IS 'Categorias de produtos (hierárquica via parent_id)';
+
 -- ========================================
--- 6. UNIDADES DE MEDIDA
+-- 8. UNIDADES DE MEDIDA
 -- ========================================
 CREATE TABLE IF NOT EXISTS unidades_medida (
     id_unidade  SERIAL PRIMARY KEY,
@@ -115,7 +167,7 @@ CREATE TABLE IF NOT EXISTS unidades_medida (
     descricao   VARCHAR(50) NOT NULL
 );
 COMMENT ON TABLE unidades_medida IS 'Unidades de medida (UN, KG, LT, CX, etc.)';
--- Dados iniciais
+
 INSERT INTO unidades_medida (sigla, descricao) VALUES
     ('UN', 'Unidade'),
     ('KG', 'Quilograma'),
@@ -128,10 +180,10 @@ INSERT INTO unidades_medida (sigla, descricao) VALUES
     ('DZ', 'Dúzia'),
     ('MT', 'Metro')
 ON CONFLICT DO NOTHING;
+
 -- ========================================
--- 7. PRODUTO
--- Mantém compatibilidade com ProdutoDAO existente.
--- Campos fiscais adicionados para o futuro.
+-- 9. PRODUTO
+-- Agora tributacao_perfil já existe — FK funciona.
 -- ========================================
 CREATE TABLE IF NOT EXISTS produto (
     id_produto          SERIAL PRIMARY KEY,
@@ -147,7 +199,7 @@ CREATE TABLE IF NOT EXISTS produto (
     estoque_minimo      DECIMAL(12, 3),
     estoque_maximo      DECIMAL(12, 3),
     id_fornecedor       INTEGER REFERENCES fornecedor(id_fornecedor) ON DELETE SET NULL,
-    -- Campos fiscais (para uso futuro — nullable por enquanto)
+    -- Campos fiscais legados (mantidos por compatibilidade com DAO existente)
     ncm                 VARCHAR(8),
     cest                VARCHAR(7),
     cfop_venda          VARCHAR(4),
@@ -160,6 +212,8 @@ CREATE TABLE IF NOT EXISTS produto (
     aliq_pis            DECIMAL(5, 4),
     aliq_cofins         DECIMAL(5, 4),
     aliq_ipi            DECIMAL(5, 2),
+    -- Nova FK para tributação normalizada (nullable = herda de categoria ou NCM)
+    id_tributacao       INTEGER REFERENCES tributacao_perfil(id_tributacao),
     -- Flags
     peso_liquido            DECIMAL(10, 3),
     peso_bruto              DECIMAL(10, 3),
@@ -171,8 +225,9 @@ CREATE TABLE IF NOT EXISTS produto (
     data_atualizacao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 COMMENT ON TABLE produto IS 'Cadastro de produtos — campos fiscais preparados para NF-e futura';
+
 -- ========================================
--- 8. TABELAS DE PREÇO
+-- 10. TABELAS DE PREÇO
 -- ========================================
 CREATE TABLE IF NOT EXISTS tabelas_preco (
     id_tabela       SERIAL PRIMARY KEY,
@@ -189,14 +244,13 @@ CREATE TABLE IF NOT EXISTS tabelas_preco_itens (
     preco           DECIMAL(12, 4) NOT NULL CHECK (preco >= 0),
     CONSTRAINT uq_tabela_produto UNIQUE (id_tabela, id_produto)
 );
+
 -- ========================================
--- 9. CLIENTES
--- Mantém compatibilidade com ClienteDAO existente.
--- PK continua sendo cnpj (compatibilidade), mas id_cliente adicionado.
+-- 11. CLIENTES
 -- ========================================
 CREATE TABLE IF NOT EXISTS clientes (
     id_cliente              SERIAL,
-    cnpj                    VARCHAR(14) NOT NULL PRIMARY KEY, -- PK legada (CPF 11 dígitos ou CNPJ)
+    cnpj                    VARCHAR(14) NOT NULL PRIMARY KEY,
     razao_social            VARCHAR(255) NOT NULL,
     nome_fantasia           VARCHAR(255),
     inscricao_estadual      VARCHAR(255),
@@ -212,8 +266,9 @@ CREATE TABLE IF NOT EXISTS clientes (
     data_atualizacao        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 COMMENT ON TABLE clientes IS 'Cadastro de clientes — PK é cnpj por compatibilidade com DAO existente';
+
 -- ========================================
--- 10. FUNCIONÁRIOS
+-- 12. FUNCIONÁRIOS
 -- ========================================
 CREATE TABLE IF NOT EXISTS funcionarios (
     id_funcionario  SERIAL PRIMARY KEY,
@@ -227,9 +282,10 @@ CREATE TABLE IF NOT EXISTS funcionarios (
     ativo           BOOLEAN NOT NULL DEFAULT TRUE,
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-); 
+);
+
 -- ========================================
--- 11. ESTOQUE (saldo por produto)
+-- 13. ESTOQUE (saldo por produto)
 -- ========================================
 CREATE TABLE IF NOT EXISTS estoque (
     id_estoque      SERIAL PRIMARY KEY,
@@ -239,9 +295,9 @@ CREATE TABLE IF NOT EXISTS estoque (
     data_atualizacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 COMMENT ON TABLE estoque IS 'Saldo consolidado de estoque por produto';
+
 -- ========================================
--- 12. MOVIMENTAÇÃO DE ESTOQUE
--- Mantém compatibilidade com tabela existente.
+-- 14. MOVIMENTAÇÃO DE ESTOQUE
 -- ========================================
 CREATE TABLE IF NOT EXISTS movimentacao_estoque (
     id_movimento    SERIAL PRIMARY KEY,
@@ -252,12 +308,13 @@ CREATE TABLE IF NOT EXISTS movimentacao_estoque (
     origem          TEXT,
     documento_id    INTEGER,
     observacao      TEXT,
-    id_usuario      INTEGER, -- FK para usuarios (adicionada depois)
+    id_usuario      INTEGER,
     data_movimento  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 -- ========================================
--- 13. CONFIGURAÇÃO FISCAL (singleton)
+-- 15. CONFIGURAÇÃO FISCAL (singleton)
 -- ========================================
 CREATE TABLE IF NOT EXISTS config_fiscal (
     id_config               SERIAL PRIMARY KEY,
@@ -272,34 +329,31 @@ CREATE TABLE IF NOT EXISTS config_fiscal (
     cst_cofins_padrao       VARCHAR(2),
     data_atualizacao        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
 COMMENT ON TABLE config_fiscal IS 'Configurações fiscais padrão da empresa — singleton';
 
 -- ========================================
--- 14. CFOP (tabela de referência)
+-- 16. CFOP (tabela de referência)
 -- ========================================
 CREATE TABLE IF NOT EXISTS cfop_cadastro (
     id_cfop         SERIAL PRIMARY KEY,
     codigo          VARCHAR(4) UNIQUE NOT NULL,
     descricao       VARCHAR(300) NOT NULL,
-    tipo_operacao   CHAR(1) NOT NULL CHECK (tipo_operacao IN ('E', 'S')) -- E=Entrada, S=Saída
+    tipo_operacao   CHAR(1) NOT NULL CHECK (tipo_operacao IN ('E', 'S'))
 );
-
 COMMENT ON TABLE cfop_cadastro IS 'Tabela de referência de CFOPs';
 
 -- ========================================
--- 15. PERFIS DE ACESSO
+-- 17. PERFIS DE ACESSO
 -- ========================================
 CREATE TABLE IF NOT EXISTS perfis_acesso (
     id_perfil       SERIAL PRIMARY KEY,
     nome            VARCHAR(60) NOT NULL,
     descricao       VARCHAR(200),
-    nivel           SMALLINT NOT NULL DEFAULT 10, -- 1=mais alto
+    nivel           SMALLINT NOT NULL DEFAULT 10,
     ativo           BOOLEAN NOT NULL DEFAULT TRUE,
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Dados iniciais
 INSERT INTO perfis_acesso (nome, descricao, nivel) VALUES
     ('Administrador', 'Acesso total ao sistema', 1),
     ('Gerente', 'Acesso gerencial (sem config sistema)', 2),
@@ -308,7 +362,7 @@ INSERT INTO perfis_acesso (nome, descricao, nivel) VALUES
 ON CONFLICT DO NOTHING;
 
 -- ========================================
--- 16. MÓDULOS DO SISTEMA
+-- 18. MÓDULOS DO SISTEMA
 -- ========================================
 CREATE TABLE IF NOT EXISTS modulos_sistema (
     id_modulo   SERIAL PRIMARY KEY,
@@ -329,7 +383,7 @@ INSERT INTO modulos_sistema (codigo, nome) VALUES
 ON CONFLICT DO NOTHING;
 
 -- ========================================
--- 17. OPERAÇÕES DO SISTEMA
+-- 19. OPERAÇÕES DO SISTEMA
 -- ========================================
 CREATE TABLE IF NOT EXISTS operacoes_sistema (
     id_operacao SERIAL PRIMARY KEY,
@@ -341,7 +395,7 @@ CREATE TABLE IF NOT EXISTS operacoes_sistema (
 );
 
 -- ========================================
--- 18. PERMISSÕES (perfil × operação)
+-- 20. PERMISSÕES (perfil × operação)
 -- ========================================
 CREATE TABLE IF NOT EXISTS permissoes (
     id_permissao    SERIAL PRIMARY KEY,
@@ -352,8 +406,7 @@ CREATE TABLE IF NOT EXISTS permissoes (
 );
 
 -- ========================================
--- 19. USUÁRIOS DO SISTEMA LOCAL
--- Substitui a tabela "licencas" antiga que era usada como usuários.
+-- 21. USUÁRIOS DO SISTEMA LOCAL
 -- ========================================
 CREATE TABLE IF NOT EXISTS usuarios (
     id_usuario          SERIAL PRIMARY KEY,
@@ -370,18 +423,17 @@ CREATE TABLE IF NOT EXISTS usuarios (
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
 COMMENT ON TABLE usuarios IS 'Usuários do sistema local — substitui a antiga tabela licencas (usuários)';
 
--- Usuário admin padrão (senha: trocar após primeiro login)
+-- Usuário admin padrão (trocar senha após primeiro login)
 INSERT INTO usuarios (id_perfil, login, senha_hash, nome_exibicao)
 VALUES (1, 'admin', '123456', 'Administrador')
 ON CONFLICT DO NOTHING;
 -- ATENÇÃO: senha em texto simples por compatibilidade temporária.
--- Quando implementar Hibernate + bcrypt, migrar para hash real.
+-- Quando implementar bcrypt, migrar para hash real.
 
 -- ========================================
--- 20. TERMINAIS
+-- 22. TERMINAIS
 -- ========================================
 CREATE TABLE IF NOT EXISTS terminais (
     id_terminal             SERIAL PRIMARY KEY,
@@ -396,11 +448,10 @@ CREATE TABLE IF NOT EXISTS terminais (
     data_cadastro           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_atualizacao        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
 COMMENT ON TABLE terminais IS 'Terminais locais — validados contra licenca_local';
 
 -- ========================================
--- 21. SESSÕES
+-- 23. SESSÕES
 -- ========================================
 CREATE TABLE IF NOT EXISTS sessoes (
     id_sessao       SERIAL PRIMARY KEY,
@@ -414,22 +465,20 @@ CREATE TABLE IF NOT EXISTS sessoes (
 );
 
 -- ========================================
--- 22. FORMAS DE PAGAMENTO
--- Expande o antigo CHECK de forma_pagamento.
+-- 24. FORMAS DE PAGAMENTO
 -- ========================================
 CREATE TABLE IF NOT EXISTS formas_pagamento (
     id_forma_pagamento  SERIAL PRIMARY KEY,
     descricao           VARCHAR(60) NOT NULL,
     tipo                VARCHAR(20) NOT NULL
                             CHECK (tipo IN ('DINHEIRO', 'CREDITO', 'DEBITO', 'PIX', 'VOUCHER', 'CREDIARIO')),
-    cod_pagamento_nfe   VARCHAR(2), -- Código meio pgto NF-e
+    cod_pagamento_nfe   VARCHAR(2),
     tef                 BOOLEAN NOT NULL DEFAULT FALSE,
     permite_troco       BOOLEAN NOT NULL DEFAULT FALSE,
     ativo               BOOLEAN NOT NULL DEFAULT TRUE,
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Dados iniciais (compatibilidade com valores antigos)
 INSERT INTO formas_pagamento (descricao, tipo, cod_pagamento_nfe, permite_troco) VALUES
     ('Dinheiro', 'DINHEIRO', '01', TRUE),
     ('Cartão de Crédito', 'CREDITO', '03', FALSE),
@@ -438,7 +487,7 @@ INSERT INTO formas_pagamento (descricao, tipo, cod_pagamento_nfe, permite_troco)
 ON CONFLICT DO NOTHING;
 
 -- ========================================
--- 23. CAIXAS (abertura/fechamento de turno)
+-- 25. CAIXAS (abertura/fechamento de turno)
 -- ========================================
 CREATE TABLE IF NOT EXISTS caixas (
     id_caixa                    SERIAL PRIMARY KEY,
@@ -458,12 +507,12 @@ CREATE TABLE IF NOT EXISTS caixas (
 );
 
 -- ========================================
--- 24. SANGRIAS E SUPRIMENTOS
+-- 26. SANGRIAS E SUPRIMENTOS
 -- ========================================
 CREATE TABLE IF NOT EXISTS sangrias_suprimentos (
     id_sangria_suprimento   SERIAL PRIMARY KEY,
     id_caixa                INTEGER NOT NULL REFERENCES caixas(id_caixa) ON DELETE RESTRICT,
-    tipo                    CHAR(1) NOT NULL CHECK (tipo IN ('S', 'U')), -- S=Sangria, U=Suprimento
+    tipo                    CHAR(1) NOT NULL CHECK (tipo IN ('S', 'U')),
     valor                   DECIMAL(12, 2) NOT NULL CHECK (valor > 0),
     motivo                  VARCHAR(200),
     id_operador             INTEGER NOT NULL REFERENCES usuarios(id_usuario) ON DELETE RESTRICT,
@@ -472,21 +521,19 @@ CREATE TABLE IF NOT EXISTS sangrias_suprimentos (
 );
 
 -- ========================================
--- 25. VENDA
--- Mantém compatibilidade com VendasDAO existente.
--- Campos expandidos para o modelo completo.
+-- 27. VENDA
 -- ========================================
 CREATE TABLE IF NOT EXISTS venda (
     id_venda            SERIAL PRIMARY KEY,
     id_caixa            INTEGER REFERENCES caixas(id_caixa) ON DELETE RESTRICT,
     id_terminal         INTEGER REFERENCES terminais(id_terminal) ON DELETE RESTRICT,
     id_operador         INTEGER REFERENCES usuarios(id_usuario) ON DELETE RESTRICT,
-    id_cliente          INTEGER, -- FK para clientes.id_cliente (não cnpj, para futuro)
+    id_cliente          INTEGER,
     numero_venda        INTEGER,
     data_venda          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     subtotal            DECIMAL(12, 2),
     desconto            DECIMAL(12, 2) DEFAULT 0,
-    acrescimo           DECIMAL(12, 2) DEFAULT 0,
+    acrescimo          DECIMAL(12, 2) DEFAULT 0,
     valor_total         DECIMAL(12, 2) NOT NULL CHECK (valor_total >= 0),
     troco               DECIMAL(12, 2) DEFAULT 0,
     cpf_nota            VARCHAR(14),
@@ -496,25 +543,22 @@ CREATE TABLE IF NOT EXISTS venda (
     observacao          TEXT,
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
 COMMENT ON TABLE venda IS 'Vendas — campo forma_pagamento mantido por compatibilidade, usar vendas_pagamentos para múltiplas formas';
 
 -- ========================================
--- 26. ITEM_VENDA
--- Mantém compatibilidade com ItemVendaDAO existente.
--- Campos fiscais adicionados para NF-e futura.
+-- 28. ITEM_VENDA
 -- ========================================
 CREATE TABLE IF NOT EXISTS item_venda (
     id_item             SERIAL PRIMARY KEY,
     id_venda            INTEGER NOT NULL REFERENCES venda(id_venda) ON DELETE RESTRICT,
     id_produto          INTEGER NOT NULL REFERENCES produto(id_produto) ON DELETE RESTRICT,
     sequencia           SMALLINT,
-    quantidade          INTEGER NOT NULL CHECK (quantidade > 0), -- legado (inteiro)
+    quantidade          INTEGER NOT NULL CHECK (quantidade > 0),
     preco_unitario      DECIMAL(12, 4) NOT NULL CHECK (preco_unitario >= 0),
     desconto            DECIMAL(12, 2) DEFAULT 0,
-    acrescimo           DECIMAL(12, 2) DEFAULT 0,
+    acrescimo          DECIMAL(12, 2) DEFAULT 0,
     total_item          DECIMAL(12, 2),
-    -- Campos fiscais (nullable — para uso futuro)
+    -- Campos fiscais (espelhados no momento da venda — não mudam retroativamente)
     cfop                VARCHAR(4),
     ncm                 VARCHAR(8),
     cest                VARCHAR(7),
@@ -533,23 +577,24 @@ CREATE TABLE IF NOT EXISTS item_venda (
     motivo_cancelamento VARCHAR(200),
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+COMMENT ON TABLE item_venda IS 'Itens de cada venda com espelhamento fiscal';
 
 -- ========================================
--- 27. VENDAS_PAGAMENTOS (múltiplas formas por venda)
+-- 29. VENDAS_PAGAMENTOS (múltiplas formas por venda)
 -- ========================================
 CREATE TABLE IF NOT EXISTS vendas_pagamentos (
     id_pagamento        SERIAL PRIMARY KEY,
     id_venda            INTEGER NOT NULL REFERENCES venda(id_venda) ON DELETE RESTRICT,
     id_forma_pagamento  INTEGER NOT NULL REFERENCES formas_pagamento(id_forma_pagamento) ON DELETE RESTRICT,
     valor               DECIMAL(12, 2) NOT NULL CHECK (valor > 0),
-    nsu                 VARCHAR(30),  -- NSU transação TEF
-    autorizacao         VARCHAR(30),  -- Cód. autorização TEF
-    bandeira            VARCHAR(30),  -- Bandeira do cartão
+    nsu                 VARCHAR(30),
+    autorizacao         VARCHAR(30),
+    bandeira            VARCHAR(30),
     data_cadastro       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ========================================
--- 28. CANCELAMENTOS
+-- 30. CANCELAMENTOS
 -- ========================================
 CREATE TABLE IF NOT EXISTS cancelamentos (
     id_cancelamento     SERIAL PRIMARY KEY,
@@ -563,7 +608,7 @@ CREATE TABLE IF NOT EXISTS cancelamentos (
 );
 
 -- ========================================
--- 29. COMPRA (mantém compatibilidade)
+-- 31. COMPRA
 -- ========================================
 CREATE TABLE IF NOT EXISTS compra (
     id_compra           SERIAL PRIMARY KEY,
@@ -582,9 +627,10 @@ CREATE TABLE IF NOT EXISTS item_compra (
     preco_unitario  DECIMAL(12, 4) NOT NULL CHECK (preco_unitario >= 0),
     data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+COMMENT ON TABLE item_compra IS 'Itens de cada compra';
 
 -- ========================================
--- 30. NOTAS FISCAIS
+-- 32. NOTAS FISCAIS
 -- ========================================
 CREATE TABLE IF NOT EXISTS notas_fiscais (
     id_nota                 SERIAL PRIMARY KEY,
@@ -607,26 +653,27 @@ CREATE TABLE IF NOT EXISTS notas_fiscais (
     contingencia            BOOLEAN NOT NULL DEFAULT FALSE,
     data_cadastro           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+COMMENT ON TABLE notas_fiscais IS 'NFC-e e NF-e emitidas — XMLs armazenados por 5 anos';
 
 -- ========================================
--- 31. INUTILIZAÇÕES NF-e
+-- 33. INUTILIZAÇÕES NF-e
 -- ========================================
 CREATE TABLE IF NOT EXISTS inutilizacoes_nfe (
-    id_inutilizacao SERIAL PRIMARY KEY,
-    tipo            VARCHAR(5) NOT NULL CHECK (tipo IN ('NFCE', 'NFE')),
-    serie           SMALLINT NOT NULL,
-    numero_inicio   INTEGER NOT NULL,
-    numero_fim      INTEGER NOT NULL,
-    justificativa   VARCHAR(300) NOT NULL,
-    protocolo       VARCHAR(20),
-    xml_retorno     TEXT,
+    id_inutilizacao   SERIAL PRIMARY KEY,
+    tipo              VARCHAR(5) NOT NULL CHECK (tipo IN ('NFCE', 'NFE')),
+    serie             SMALLINT NOT NULL,
+    numero_inicio     INTEGER NOT NULL,
+    numero_fim        INTEGER NOT NULL,
+    justificativa     VARCHAR(300) NOT NULL,
+    protocolo         VARCHAR(20),
+    xml_retorno       TEXT,
     data_inutilizacao TIMESTAMP NOT NULL,
-    id_usuario      INTEGER REFERENCES usuarios(id_usuario) ON DELETE RESTRICT,
-    data_cadastro   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    id_usuario        INTEGER REFERENCES usuarios(id_usuario) ON DELETE RESTRICT,
+    data_cadastro     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ========================================
--- 32. CONFIGURAÇÕES (chave-valor)
+-- 34. CONFIGURAÇÕES (chave-valor)
 -- ========================================
 CREATE TABLE IF NOT EXISTS configuracoes (
     id_config       SERIAL PRIMARY KEY,
@@ -639,10 +686,8 @@ CREATE TABLE IF NOT EXISTS configuracoes (
     data_atualizacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_modulo_chave UNIQUE (modulo, chave)
 );
-
 COMMENT ON TABLE configuracoes IS 'Parâmetros do sistema em chave-valor por módulo';
 
--- Configurações iniciais
 INSERT INTO configuracoes (modulo, chave, valor, tipo_dado, descricao) VALUES
     ('LICENCA', 'GRACE_PERIOD_DIAS', '7', 'INTEGER', 'Dias de operação offline após falha no heartbeat'),
     ('LICENCA', 'HEARTBEAT_INTERVALO_HORAS', '24', 'INTEGER', 'Intervalo entre heartbeats em horas'),
@@ -653,7 +698,7 @@ INSERT INTO configuracoes (modulo, chave, valor, tipo_dado, descricao) VALUES
 ON CONFLICT DO NOTHING;
 
 -- ========================================
--- 33. LOG DE LOGIN
+-- 35. LOG DE LOGIN
 -- ========================================
 CREATE TABLE IF NOT EXISTS log_login (
     id_log          BIGSERIAL PRIMARY KEY,
@@ -667,7 +712,7 @@ CREATE TABLE IF NOT EXISTS log_login (
 );
 
 -- ========================================
--- 34. LOG DE ALTERAÇÕES
+-- 36. LOG DE ALTERAÇÕES
 -- ========================================
 CREATE TABLE IF NOT EXISTS log_alteracoes (
     id_log          BIGSERIAL PRIMARY KEY,
@@ -682,7 +727,7 @@ CREATE TABLE IF NOT EXISTS log_alteracoes (
 );
 
 -- ========================================
--- 35. LOG DE EXCLUSÕES
+-- 37. LOG DE EXCLUSÕES
 -- ========================================
 CREATE TABLE IF NOT EXISTS log_exclusoes (
     id_log          BIGSERIAL PRIMARY KEY,
@@ -690,12 +735,13 @@ CREATE TABLE IF NOT EXISTS log_exclusoes (
     id_terminal     INTEGER REFERENCES terminais(id_terminal) ON DELETE SET NULL,
     tabela          VARCHAR(60) NOT NULL,
     id_registro     INTEGER NOT NULL,
-    dados_registro  TEXT NOT NULL, -- JSON snapshot
+    dados_registro  TEXT NOT NULL,
     motivo          VARCHAR(300),
     data_log        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 -- ========================================
--- 36. LOG DE OPERAÇÕES CRÍTICAS
+-- 38. LOG DE OPERAÇÕES CRÍTICAS
 -- ========================================
 CREATE TABLE IF NOT EXISTS log_operacoes_criticas (
     id_log              BIGSERIAL PRIMARY KEY,
@@ -705,7 +751,7 @@ CREATE TABLE IF NOT EXISTS log_operacoes_criticas (
     descricao           TEXT,
     tabela_referencia   VARCHAR(60),
     id_registro         INTEGER,
-    dados_adicionais    TEXT, -- JSON
+    dados_adicionais    TEXT,
     data_log            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -715,64 +761,68 @@ CREATE TABLE IF NOT EXISTS log_operacoes_criticas (
 
 -- Produto
 CREATE INDEX IF NOT EXISTS idx_produto_codigo_barras ON produto(codigo_barras);
-CREATE INDEX IF NOT EXISTS idx_produto_fornecedor ON produto(id_fornecedor);
-CREATE INDEX IF NOT EXISTS idx_produto_categoria ON produto(id_categoria);
-CREATE INDEX IF NOT EXISTS idx_produto_ativo ON produto(ativo);
+CREATE INDEX IF NOT EXISTS idx_produto_fornecedor    ON produto(id_fornecedor);
+CREATE INDEX IF NOT EXISTS idx_produto_categoria     ON produto(id_categoria);
+CREATE INDEX IF NOT EXISTS idx_produto_ativo         ON produto(ativo);
+CREATE INDEX IF NOT EXISTS idx_produto_tributacao    ON produto(id_tributacao);
+
+-- Categorias
+CREATE INDEX IF NOT EXISTS idx_categoria_tributacao  ON categorias(id_tributacao_padrao);
 
 -- Fornecedor
-CREATE INDEX IF NOT EXISTS idx_fornecedor_cnpj ON fornecedor(cnpj);
-CREATE INDEX IF NOT EXISTS idx_fornecedor_endereco ON fornecedor(id_endereco);
+CREATE INDEX IF NOT EXISTS idx_fornecedor_cnpj       ON fornecedor(cnpj);
+CREATE INDEX IF NOT EXISTS idx_fornecedor_endereco   ON fornecedor(id_endereco);
 
 -- Clientes
-CREATE INDEX IF NOT EXISTS idx_clientes_endereco ON clientes(id_endereco_cliente);
-CREATE INDEX IF NOT EXISTS idx_clientes_email ON clientes(email_cliente);
+CREATE INDEX IF NOT EXISTS idx_clientes_endereco     ON clientes(id_endereco_cliente);
+CREATE INDEX IF NOT EXISTS idx_clientes_email        ON clientes(email_cliente);
 
 -- Estoque
-CREATE INDEX IF NOT EXISTS idx_estoque_produto ON estoque(id_produto);
+CREATE INDEX IF NOT EXISTS idx_estoque_produto       ON estoque(id_produto);
 
 -- Movimentação
-CREATE INDEX IF NOT EXISTS idx_movimentacao_produto ON movimentacao_estoque(id_produto);
-CREATE INDEX IF NOT EXISTS idx_movimentacao_data ON movimentacao_estoque(data_movimento);
+CREATE INDEX IF NOT EXISTS idx_movimentacao_produto  ON movimentacao_estoque(id_produto);
+CREATE INDEX IF NOT EXISTS idx_movimentacao_data     ON movimentacao_estoque(data_movimento);
 
 -- Venda
-CREATE INDEX IF NOT EXISTS idx_venda_data ON venda(data_venda);
-CREATE INDEX IF NOT EXISTS idx_venda_caixa ON venda(id_caixa);
-CREATE INDEX IF NOT EXISTS idx_venda_status ON venda(status);
+CREATE INDEX IF NOT EXISTS idx_venda_data            ON venda(data_venda);
+CREATE INDEX IF NOT EXISTS idx_venda_caixa           ON venda(id_caixa);
+CREATE INDEX IF NOT EXISTS idx_venda_status          ON venda(status);
 
 -- Item venda
-CREATE INDEX IF NOT EXISTS idx_item_venda_venda ON item_venda(id_venda);
-CREATE INDEX IF NOT EXISTS idx_item_venda_produto ON item_venda(id_produto);
+CREATE INDEX IF NOT EXISTS idx_item_venda_venda      ON item_venda(id_venda);
+CREATE INDEX IF NOT EXISTS idx_item_venda_produto    ON item_venda(id_produto);
 
 -- Compra
-CREATE INDEX IF NOT EXISTS idx_compra_fornecedor ON compra(id_fornecedor);
-CREATE INDEX IF NOT EXISTS idx_compra_data ON compra(data_compra);
-CREATE INDEX IF NOT EXISTS idx_item_compra_compra ON item_compra(id_compra);
+CREATE INDEX IF NOT EXISTS idx_compra_fornecedor     ON compra(id_fornecedor);
+CREATE INDEX IF NOT EXISTS idx_compra_data           ON compra(data_compra);
+CREATE INDEX IF NOT EXISTS idx_item_compra_compra    ON item_compra(id_compra);
 
 -- Notas fiscais
-CREATE INDEX IF NOT EXISTS idx_notas_chave ON notas_fiscais(chave_acesso);
-CREATE INDEX IF NOT EXISTS idx_notas_tipo_numero ON notas_fiscais(tipo, numero, serie);
-CREATE INDEX IF NOT EXISTS idx_notas_status ON notas_fiscais(status);
+CREATE INDEX IF NOT EXISTS idx_notas_chave           ON notas_fiscais(chave_acesso);
+CREATE INDEX IF NOT EXISTS idx_notas_tipo_numero     ON notas_fiscais(tipo, numero, serie);
+CREATE INDEX IF NOT EXISTS idx_notas_status          ON notas_fiscais(status);
 
 -- Usuarios
-CREATE INDEX IF NOT EXISTS idx_usuarios_login ON usuarios(login);
-CREATE INDEX IF NOT EXISTS idx_usuarios_perfil ON usuarios(id_perfil);
+CREATE INDEX IF NOT EXISTS idx_usuarios_login        ON usuarios(login);
+CREATE INDEX IF NOT EXISTS idx_usuarios_perfil       ON usuarios(id_perfil);
 
 -- Terminais
-CREATE INDEX IF NOT EXISTS idx_terminais_maquina ON terminais(identificador_maquina);
+CREATE INDEX IF NOT EXISTS idx_terminais_maquina     ON terminais(identificador_maquina);
 
 -- Sessões
-CREATE INDEX IF NOT EXISTS idx_sessoes_usuario ON sessoes(id_usuario, ativa);
+CREATE INDEX IF NOT EXISTS idx_sessoes_usuario       ON sessoes(id_usuario, ativa);
 
 -- Logs
-CREATE INDEX IF NOT EXISTS idx_log_login_data ON log_login(data_log);
-CREATE INDEX IF NOT EXISTS idx_log_login_usuario ON log_login(id_usuario);
-CREATE INDEX IF NOT EXISTS idx_log_alteracoes_data ON log_alteracoes(data_log);
-CREATE INDEX IF NOT EXISTS idx_log_exclusoes_data ON log_exclusoes(data_log);
-CREATE INDEX IF NOT EXISTS idx_log_criticas_data ON log_operacoes_criticas(data_log);
+CREATE INDEX IF NOT EXISTS idx_log_login_data        ON log_login(data_log);
+CREATE INDEX IF NOT EXISTS idx_log_login_usuario     ON log_login(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_log_alteracoes_data   ON log_alteracoes(data_log);
+CREATE INDEX IF NOT EXISTS idx_log_exclusoes_data    ON log_exclusoes(data_log);
+CREATE INDEX IF NOT EXISTS idx_log_criticas_data     ON log_operacoes_criticas(data_log);
 
 -- Endereços
-CREATE INDEX IF NOT EXISTS idx_enderecos_cidade ON enderecos(cidade);
-CREATE INDEX IF NOT EXISTS idx_enderecos_cep ON enderecos(cep);
+CREATE INDEX IF NOT EXISTS idx_enderecos_cidade      ON enderecos(cidade);
+CREATE INDEX IF NOT EXISTS idx_enderecos_cep         ON enderecos(cep);
 
 -- ========================================
 -- TRIGGERS
@@ -784,6 +834,10 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_empresa_update
+    BEFORE UPDATE ON empresa
+    FOR EACH ROW EXECUTE FUNCTION fn_atualizar_data_modificacao();
 
 CREATE TRIGGER trg_fornecedor_update
     BEFORE UPDATE ON fornecedor
@@ -809,22 +863,23 @@ CREATE TRIGGER trg_terminais_update
     BEFORE UPDATE ON terminais
     FOR EACH ROW EXECUTE FUNCTION fn_atualizar_data_modificacao();
 
-CREATE TRIGGER trg_empresa_update
-    BEFORE UPDATE ON empresa
+CREATE TRIGGER trg_tributacao_perfil_update
+    BEFORE UPDATE ON tributacao_perfil
     FOR EACH ROW EXECUTE FUNCTION fn_atualizar_data_modificacao();
 
 -- ========================================
 -- COMENTÁRIOS
 -- ========================================
-COMMENT ON TABLE fornecedor IS 'Cadastro de fornecedores';
-COMMENT ON TABLE produto IS 'Cadastro de produtos com campos fiscais preparados';
+COMMENT ON TABLE fornecedor           IS 'Cadastro de fornecedores';
+COMMENT ON TABLE produto              IS 'Cadastro de produtos com campos fiscais preparados';
+COMMENT ON TABLE tributacao_perfil    IS 'Perfis de tributação normalizados — separados do produto';
+COMMENT ON TABLE ncm_tributacao       IS 'Fallback de tributação por NCM nacional';
 COMMENT ON TABLE movimentacao_estoque IS 'Registro de movimentações de estoque';
-COMMENT ON TABLE item_venda IS 'Itens de cada venda com espelhamento fiscal';
-COMMENT ON TABLE venda IS 'Vendas realizadas no PDV';
-COMMENT ON TABLE compra IS 'Registro de compras';
-COMMENT ON TABLE item_compra IS 'Itens de cada compra';
-COMMENT ON TABLE enderecos IS 'Endereços compartilhados';
-COMMENT ON TABLE clientes IS 'Cadastro de clientes';
-COMMENT ON TABLE usuarios IS 'Usuários do sistema local';
-COMMENT ON TABLE terminais IS 'Terminais PDV/Gerenciador validados contra licença';
-COMMENT ON TABLE notas_fiscais IS 'NFC-e e NF-e emitidas — XMLs armazenados por 5 anos';
+COMMENT ON TABLE item_venda           IS 'Itens de cada venda com espelhamento fiscal';
+COMMENT ON TABLE venda                IS 'Vendas realizadas no PDV';
+COMMENT ON TABLE compra               IS 'Registro de compras';
+COMMENT ON TABLE enderecos            IS 'Endereços compartilhados';
+COMMENT ON TABLE clientes             IS 'Cadastro de clientes';
+COMMENT ON TABLE usuarios             IS 'Usuários do sistema local';
+COMMENT ON TABLE terminais            IS 'Terminais PDV/Gerenciador validados contra licença';
+COMMENT ON TABLE notas_fiscais        IS 'NFC-e e NF-e emitidas — XMLs armazenados por 5 anos';
