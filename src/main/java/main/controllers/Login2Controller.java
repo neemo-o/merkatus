@@ -3,18 +3,21 @@ package main.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import main.database.auth.UserAuth;
+import main.models.Usuario;
+import main.util.FXMLLoaderFactory;
+import main.util.SessionManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import main.database.auth.UserAuth;
-import main.util.FXMLLoaderFactory;
 
 @Component
 public class Login2Controller {
@@ -35,9 +38,11 @@ public class Login2Controller {
     @FXML
     private Button loginButton;
     @FXML
-    private Button loginButton1;
-    @FXML
     private Text statusMessage;
+    @FXML
+    private Label usuarioEncontradoLabel;
+
+    private Usuario usuarioEncontrado;
 
     @FXML
     public void initialize() {
@@ -48,6 +53,36 @@ public class Login2Controller {
                     stage.setResizable(false);
                     Platform.runLater(stage::centerOnScreen);
                 }
+            }
+        });
+
+        // Listener para buscar o usuário ao digitar o ID
+        usernameField.textProperty().addListener((obs, oldVal, newVal) -> {
+            String texto = newVal.trim();
+
+            if (texto.isEmpty()) {
+                usuarioEncontradoLabel.setText("");
+                usuarioEncontradoLabel.setVisible(false);
+                usuarioEncontrado = null;
+                return;
+            }
+
+            try {
+                Integer id = Integer.parseInt(texto);
+                usuarioEncontrado = userAuth.buscarPorId(id);
+
+                if (usuarioEncontrado != null) {
+                    usuarioEncontradoLabel.setText("USUÁRIO: " + usuarioEncontrado.getNome().toUpperCase());
+                    usuarioEncontradoLabel.setStyle("-fx-text-fill: #2c6e3c; -fx-font-size: 12; -fx-font-weight: bold;");
+                    usuarioEncontradoLabel.setVisible(true);
+                    statusMessage.setVisible(false);
+                } else {
+                    usuarioEncontradoLabel.setText("");
+                    usuarioEncontradoLabel.setVisible(false);
+                    mostrarErro("Usuário não encontrado com este ID.");
+                }
+            } catch (NumberFormatException e) {
+                mostrarErro("ID de usuário deve ser numérico.");
             }
         });
     }
@@ -71,6 +106,10 @@ public class Login2Controller {
             Integer userId = Integer.parseInt(username);
 
             if (userAuth.authenticate(userId, password)) {
+                Usuario usuario = userAuth.buscarPorId(userId);
+                if (usuario != null) {
+                    SessionManager.setUsuarioAtual(usuario);
+                }
                 navegarPara("/main/view/MainScreen.fxml", true);
             } else {
                 mostrarErro("Credenciais inválidas ou usuário bloqueado.");
@@ -90,6 +129,16 @@ public class Login2Controller {
         try {
             FXMLLoader loader = loaderFactory.create(fxml);
             Parent root = loader.load();
+
+            // Pass user info to MainScreenController
+            Object controller = loader.getController();
+            if (controller instanceof MainScreenController mainscreenController) {
+                Usuario usuario = SessionManager.getUsuarioAtual();
+                if (usuario != null) {
+                    mainscreenController.setUsuario(usuario.getNome());
+                }
+            }
+
             Stage stage = (Stage) loginButton.getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.setResizable(false);
@@ -108,8 +157,9 @@ public class Login2Controller {
 
     @FXML
     private void handleCloseButton() {
-        if (loginButton1.getScene() != null && loginButton1.getScene().getWindow() != null) {
-            Stage stage = (Stage) loginButton1.getScene().getWindow();
+        Scene scene = usernameField.getScene();
+        if (scene != null && scene.getWindow() != null) {
+            Stage stage = (Stage) scene.getWindow();
             stage.close();
         } else {
             System.exit(0);

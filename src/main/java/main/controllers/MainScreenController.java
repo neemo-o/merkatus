@@ -28,7 +28,9 @@ import javafx.util.Duration;
 import main.Modal.ModalManager;
 import main.Modal.ModalType;
 import main.database.DatabaseManager;
+import main.models.Usuario;
 import main.util.FXMLLoaderFactory;
+import main.util.SessionManager;
 
 @Component
 public class MainScreenController {
@@ -93,6 +95,12 @@ public class MainScreenController {
         });
 
         ipLabel.setText("127.0.0.1");
+
+        // Exibe o usuário da sessão no rodapé
+        Usuario usuario = SessionManager.getUsuarioAtual();
+        if (usuario != null) {
+            usuarioLabel.setText(usuario.getNome());
+        }
 
         Timeline clock = new Timeline(
                 new KeyFrame(Duration.ZERO, e -> {
