@@ -1,19 +1,31 @@
 package main.database.DAOs;
 
-import main.database.GenericDAO;
-import main.models.Categoria;
-import org.springframework.stereotype.Component;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+
+import main.database.GenericDAO;
+import main.models.Categoria;
+
 @Component
 public class CategoriaDAO extends GenericDAO<Categoria, Integer> {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    public static java.util.List<Categoria> findAllStatic() {
+        return GenericDAO.findAllStatic(CategoriaDAO.class);
+    }
+
+    public static Categoria findByIdStatic(Integer id) {
+        return GenericDAO.findByIdStatic(CategoriaDAO.class, id);
+    }
 
     @Override
     protected String getTabela() { return "categorias"; }
@@ -22,122 +34,54 @@ public class CategoriaDAO extends GenericDAO<Categoria, Integer> {
     protected String getColunaId() { return "id_categoria"; }
 
     @Override
-    protected void setIdGerado(Categoria c, ResultSet keys) throws SQLException {
-        c.setIdCategoria(keys.getInt(1));
+    protected void setGeneratedId(Categoria c, Number id) {
+        c.setIdCategoria(id.intValue());
     }
 
-    // ==============================
-    // Busca todas as raízes (sem parent) — útil para montar árvore de categorias
-    // ==============================
-
-    public List<Categoria> findRaizes() throws SQLException {
-        List<Categoria> lista = new ArrayList<>();
+    public List<Categoria> findRaizes() {
         String sql = "SELECT * FROM categorias WHERE parent_id IS NULL AND ativo = TRUE ORDER BY nome";
-
-        try (var conn = getConnection();
-             var stmt = conn.prepareStatement(sql);
-             var rs = stmt.executeQuery()) {
-
-            while (rs.next()) lista.add(mapear(rs));
-        }
-        return lista;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> mapear(rs));
     }
 
-    // ==============================
-    // Busca filhas de uma categoria pai
-    // ==============================
-
-    public List<Categoria> findByParent(Integer parentId) throws SQLException {
-        List<Categoria> lista = new ArrayList<>();
+    public List<Categoria> findByParent(Integer parentId) {
         String sql = "SELECT * FROM categorias WHERE parent_id = ? AND ativo = TRUE ORDER BY nome";
-
-        try (var conn = getConnection();
-             var stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, parentId);
-            try (var rs = stmt.executeQuery()) {
-                while (rs.next()) lista.add(mapear(rs));
-            }
-        }
-        return lista;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> mapear(rs), parentId);
     }
 
-    // ==============================
-    // Busca categoria COM tributação padrão resolvida — usado no TributacaoService
-    // Retorna a categoria com idTributacaoPadrao preenchido (se tiver)
-    // ==============================
-
-    public Optional<Categoria> findByIdComTributacao(Integer idCategoria) throws SQLException {
-        String sql = """
-                SELECT c.*
-                FROM categorias c
-                WHERE c.id_categoria = ?
-                """;
-
-        try (var conn = getConnection();
-             var stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, idCategoria);
-            try (var rs = stmt.executeQuery()) {
-                if (rs.next()) return Optional.of(mapear(rs));
-            }
-        }
-        return Optional.empty();
+    public Optional<Categoria> findByIdComTributacao(Integer idCategoria) {
+        String sql = "SELECT * FROM categorias WHERE id_categoria = ?";
+        List<Categoria> result = jdbcTemplate.query(sql, (rs, rowNum) -> mapear(rs), idCategoria);
+        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
-
-    // ==============================
-    // Mapeamento ResultSet → Model
-    // ==============================
 
     @Override
     protected Categoria mapear(ResultSet rs) throws SQLException {
         Categoria c = new Categoria();
-
         c.setIdCategoria(rs.getInt("id_categoria"));
-
-        // parent_id é nullable — getObject evita retornar 0 quando o valor é NULL
         c.setParentId(rs.getObject("parent_id", Integer.class));
         c.setNome(rs.getString("nome"));
-
-        // id_tributacao_padrao também é nullable
         c.setIdTributacaoPadrao(rs.getObject("id_tributacao_padrao", Integer.class));
         c.setAtivo(rs.getBoolean("ativo"));
-
-        Timestamp cadastro = rs.getTimestamp("data_cadastro");
+        java.sql.Timestamp cadastro = rs.getTimestamp("data_cadastro");
         if (cadastro != null) c.setDataCadastro(cadastro.toLocalDateTime());
-
         return c;
     }
 
-    // ==============================
-    // SQL Insert / Update
-    // ==============================
-
     @Override
     protected String getSqlInsert() {
-        return """
-                INSERT INTO categorias (parent_id, nome, id_tributacao_padrao, ativo)
-                VALUES (?, ?, ?, ?)
-                """;
+        return "INSERT INTO categorias (parent_id, nome, id_tributacao_padrao, ativo) VALUES (?, ?, ?, ?)";
     }
 
     @Override
     protected String getSqlUpdate() {
-        return """
-                UPDATE categorias SET
-                    parent_id = ?,
-                    nome = ?,
-                    id_tributacao_padrao = ?,
-                    ativo = ?
-                WHERE id_categoria = ?
-                """;
+        return "UPDATE categorias SET parent_id = ?, nome = ?, id_tributacao_padrao = ?, ativo = ? WHERE id_categoria = ?";
     }
 
     @Override
     protected void setParametrosInsert(PreparedStatement stmt, Categoria c) throws SQLException {
-        stmt.setObject(1, c.getParentId());            // nullable
+        stmt.setObject(1, c.getParentId());
         stmt.setString(2, c.getNome());
-        stmt.setObject(3, c.getIdTributacaoPadrao());  // nullable
+        stmt.setObject(3, c.getIdTributacaoPadrao());
         stmt.setBoolean(4, c.isAtivo());
     }
 
@@ -147,6 +91,6 @@ public class CategoriaDAO extends GenericDAO<Categoria, Integer> {
         stmt.setString(2, c.getNome());
         stmt.setObject(3, c.getIdTributacaoPadrao());
         stmt.setBoolean(4, c.isAtivo());
-        stmt.setInt(5, c.getIdCategoria()); // WHERE
+        stmt.setInt(5, c.getIdCategoria());
     }
 }

@@ -2,6 +2,8 @@ package main.database.DAOs;
 
 import main.database.GenericDAO;
 import main.models.TributacaoPerfil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
@@ -14,6 +16,9 @@ import java.util.Optional;
 @Component
 public class TributacaoPerfilDAO extends GenericDAO<TributacaoPerfil, Integer> {
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Override
     protected String getTabela() { return "tributacao_perfil"; }
 
@@ -21,15 +26,11 @@ public class TributacaoPerfilDAO extends GenericDAO<TributacaoPerfil, Integer> {
     protected String getColunaId() { return "id_tributacao"; }
 
     @Override
-    protected void setIdGerado(TributacaoPerfil t, ResultSet keys) throws SQLException {
-        t.setIdTributacao(keys.getInt(1));
+    protected void setGeneratedId(TributacaoPerfil t, Number id) {
+        t.setIdTributacao(id.intValue());
     }
 
-    // ==============================
-    // Busca por NCM — usada no fallback do TributacaoService
-    // ==============================
-
-    public Optional<TributacaoPerfil> findByNcm(String ncm) throws SQLException {
+    public Optional<TributacaoPerfil> findByNcm(String ncm) {
         String sql = """
                 SELECT tp.*
                 FROM tributacao_perfil tp
@@ -37,39 +38,14 @@ public class TributacaoPerfilDAO extends GenericDAO<TributacaoPerfil, Integer> {
                 WHERE nt.ncm = ?
                   AND tp.ativo = TRUE
                 """;
-
-        try (var conn = getConnection();
-             var stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, ncm);
-
-            try (var rs = stmt.executeQuery()) {
-                if (rs.next()) return Optional.of(mapear(rs));
-            }
-        }
-        return Optional.empty();
+        List<TributacaoPerfil> result = jdbcTemplate.query(sql, (rs, rowNum) -> mapear(rs), ncm);
+        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 
-    // ==============================
-    // Busca somente os ativos (para combobox de cadastro)
-    // ==============================
-
-    public List<TributacaoPerfil> findAllAtivos() throws SQLException {
-        var lista = new java.util.ArrayList<TributacaoPerfil>();
+    public List<TributacaoPerfil> findAllAtivos() {
         String sql = "SELECT * FROM tributacao_perfil WHERE ativo = TRUE ORDER BY nome";
-
-        try (var conn = getConnection();
-             var stmt = conn.prepareStatement(sql);
-             var rs = stmt.executeQuery()) {
-
-            while (rs.next()) lista.add(mapear(rs));
-        }
-        return lista;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> mapear(rs));
     }
-
-    // ==============================
-    // Mapeamento ResultSet → Model
-    // ==============================
 
     @Override
     protected TributacaoPerfil mapear(ResultSet rs) throws SQLException {
@@ -110,50 +86,18 @@ public class TributacaoPerfilDAO extends GenericDAO<TributacaoPerfil, Integer> {
         return t;
     }
 
-    // ==============================
-    // SQL Insert / Update
-    // ==============================
-
     @Override
     protected String getSqlInsert() {
-        return """
-                INSERT INTO tributacao_perfil
-                (nome, descricao, ncm, cest,
-                 cst_icms, csosn, aliq_icms, aliq_icms_st, mva_st,
-                 cfop_venda, cfop_venda_interestadual,
-                 cst_pis, cst_cofins, aliq_pis, aliq_cofins,
-                 cst_ipi, aliq_ipi, ativo)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """;
+        return "INSERT INTO tributacao_perfil (nome, descricao, ncm, cest, cst_icms, csosn, aliq_icms, aliq_icms_st, mva_st, cfop_venda, cfop_venda_interestadual, cst_pis, cst_cofins, aliq_pis, aliq_cofins, cst_ipi, aliq_ipi, ativo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     }
 
     @Override
     protected String getSqlUpdate() {
-        return """
-                UPDATE tributacao_perfil SET
-                    nome = ?, descricao = ?, ncm = ?, cest = ?,
-                    cst_icms = ?, csosn = ?, aliq_icms = ?, aliq_icms_st = ?, mva_st = ?,
-                    cfop_venda = ?, cfop_venda_interestadual = ?,
-                    cst_pis = ?, cst_cofins = ?, aliq_pis = ?, aliq_cofins = ?,
-                    cst_ipi = ?, aliq_ipi = ?, ativo = ?
-                WHERE id_tributacao = ?
-                """;
+        return "UPDATE tributacao_perfil SET nome = ?, descricao = ?, ncm = ?, cest = ?, cst_icms = ?, csosn = ?, aliq_icms = ?, aliq_icms_st = ?, mva_st = ?, cfop_venda = ?, cfop_venda_interestadual = ?, cst_pis = ?, cst_cofins = ?, aliq_pis = ?, aliq_cofins = ?, cst_ipi = ?, aliq_ipi = ?, ativo = ? WHERE id_tributacao = ?";
     }
 
     @Override
     protected void setParametrosInsert(PreparedStatement stmt, TributacaoPerfil t) throws SQLException {
-        setParametrosComuns(stmt, t);
-        // sem id no insert
-    }
-
-    @Override
-    protected void setParametrosUpdate(PreparedStatement stmt, TributacaoPerfil t) throws SQLException {
-        setParametrosComuns(stmt, t);
-        stmt.setInt(19, t.getIdTributacao()); // WHERE
-    }
-
-    // Evita duplicar os 18 setters em insert e update
-    private void setParametrosComuns(PreparedStatement stmt, TributacaoPerfil t) throws SQLException {
         stmt.setString(1, t.getNome());
         stmt.setString(2, t.getDescricao());
         stmt.setString(3, t.getNcm());
@@ -172,5 +116,28 @@ public class TributacaoPerfilDAO extends GenericDAO<TributacaoPerfil, Integer> {
         stmt.setString(16, t.getCstIpi());
         stmt.setObject(17, t.getAliqIpi());
         stmt.setBoolean(18, t.isAtivo());
+    }
+
+    @Override
+    protected void setParametrosUpdate(PreparedStatement stmt, TributacaoPerfil t) throws SQLException {
+        stmt.setString(1, t.getNome());
+        stmt.setString(2, t.getDescricao());
+        stmt.setString(3, t.getNcm());
+        stmt.setString(4, t.getCest());
+        stmt.setString(5, t.getCstIcms());
+        stmt.setString(6, t.getCsosn());
+        stmt.setObject(7, t.getAliqIcms());
+        stmt.setObject(8, t.getAliqIcmsSt());
+        stmt.setObject(9, t.getMvaSt());
+        stmt.setString(10, t.getCfopVenda());
+        stmt.setString(11, t.getCfopVendaInterestadual());
+        stmt.setString(12, t.getCstPis());
+        stmt.setString(13, t.getCstCofins());
+        stmt.setObject(14, t.getAliqPis());
+        stmt.setObject(15, t.getAliqCofins());
+        stmt.setString(16, t.getCstIpi());
+        stmt.setObject(17, t.getAliqIpi());
+        stmt.setBoolean(18, t.isAtivo());
+        stmt.setInt(19, t.getIdTributacao());
     }
 }

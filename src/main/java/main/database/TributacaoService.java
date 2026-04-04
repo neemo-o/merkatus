@@ -10,7 +10,6 @@ import main.models.Produto;
 import main.models.TributacaoPerfil;
 import org.springframework.stereotype.Service;
 
-import java.sql.SQLException;
 import java.util.Optional;
 
 @Service
@@ -31,7 +30,7 @@ public class TributacaoService {
      * 3. Lookup pelo NCM do produto na tabela ncm_tributacao
      * 4. Lança exceção com mensagem clara
      */
-    public TributacaoPerfil resolverTributacao(Integer idProduto) throws SQLException {
+    public TributacaoPerfil resolverTributacao(Integer idProduto) {
 
         Produto produto = produtoDAO.findById(idProduto)
             .orElseThrow(() -> new IllegalArgumentException(
@@ -62,15 +61,8 @@ public class TributacaoService {
         }
 
         try {
-            Optional<TributacaoPerfil> resultado = tributacaoPerfilDAO.findById(produto.getIdTributacao());
-            resultado.ifPresent(t ->
-                log.debug("Tributação resolvida pela origem: PRODUTO (id_tributacao={})",
-                    t.getIdTributacao())
-            );
-            return resultado;
-
-        } catch (SQLException e) {
-            // Logar e tratar como "não encontrado" para tentar o próximo nível
+            return tributacaoPerfilDAO.findById(produto.getIdTributacao());
+        } catch (Exception e) {
             log.warn("Erro ao buscar tributação do produto id={}: {}",
                 produto.getIdProduto(), e.getMessage());
             return Optional.empty();
@@ -107,13 +99,13 @@ public class TributacaoService {
                         );
                         return resultado;
 
-                    } catch (SQLException e) {
+                    } catch (Exception e) {
                         log.warn("Erro ao buscar tributação da categoria: {}", e.getMessage());
                         return Optional.empty();
                     }
                 });
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             log.warn("Erro ao buscar categoria id={}: {}", produto.getIdCategoria(), e.getMessage());
             return Optional.empty();
         }
@@ -144,14 +136,14 @@ public class TributacaoService {
                         );
                         return resultado;
 
-                    } catch (SQLException e) {
+                    } catch (Exception e) {
                         log.warn("Erro ao buscar tributação por NCM '{}': {}",
                             produto.getNcm(), e.getMessage());
                         return Optional.empty();
                     }
                 });
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             log.warn("Erro ao consultar ncm_tributacao para NCM='{}': {}",
                 produto.getNcm(), e.getMessage());
             return Optional.empty();

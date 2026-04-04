@@ -43,8 +43,8 @@ public class FuncionarioDAO extends GenericDAO<Funcionario, Integer> {
     }
 
     @Override
-    protected void setIdGerado(Funcionario f, ResultSet keys) throws SQLException {
-        f.setIdFuncionario(keys.getInt(1));
+    protected void setGeneratedId(Funcionario f, Number id) {
+        f.setIdFuncionario(id.intValue());
     }
 
     @Override

@@ -43,8 +43,8 @@ public class UnidadeMedidaDAO extends GenericDAO<UnidadeMedida, Integer> {
     }
 
     @Override
-    protected void setIdGerado(UnidadeMedida u, ResultSet keys) throws SQLException {
-        u.setIdUnidade(keys.getInt(1));
+    protected void setGeneratedId(UnidadeMedida u, Number id) {
+        u.setIdUnidade(id.intValue());
     }
 
     @Override

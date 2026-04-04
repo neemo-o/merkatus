@@ -1,40 +1,29 @@
 package main.database.auth;
 
-import main.database.DatabaseManager;
 import main.models.Usuario;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import javax.sql.DataSource;
 
 @Component
 public class UserAuth {
 
-    @Autowired
-    private DatabaseManager databaseManager;
+    private final JdbcTemplate oficialJdbc;
+
+    public UserAuth(@Qualifier("oficialDataSource") DataSource oficialDataSource) {
+        this.oficialJdbc = new JdbcTemplate(oficialDataSource);
+    }
 
     public boolean authenticate(Integer idUsuario, String senha) {
-        String sql = """
-            SELECT senha_hash, bloqueado
-            FROM usuarios
-            WHERE id_usuario = ? AND ativo = TRUE
-            """;
+        String sql = "SELECT senha_hash, bloqueado FROM usuarios WHERE id_usuario = ? AND ativo = TRUE";
 
-        try (Connection conn = databaseManager.getOficialConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, idUsuario);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    if (rs.getBoolean("bloqueado")) return false;
-                    return senha.equals(rs.getString("senha_hash"));
-                }
-            }
-        } catch (SQLException e) {
+        try {
+            var row = oficialJdbc.queryForMap(sql, idUsuario);
+            if (Boolean.TRUE.equals((Boolean) row.get("bloqueado"))) return false;
+            return senha.equals(row.get("senha_hash"));
+        } catch (Exception e) {
             System.err.println("Erro ao autenticar usuário: " + e.getMessage());
         }
         return false;
@@ -46,22 +35,14 @@ public class UserAuth {
     public Usuario buscarPorId(Integer idUsuario) {
         String sql = "SELECT id_usuario, nome_exibicao, login FROM usuarios WHERE id_usuario = ? AND ativo = TRUE";
 
-        try (Connection conn = databaseManager.getOficialConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, idUsuario);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    Usuario usuario = new Usuario(
-                        rs.getInt("id_usuario"),
-                        rs.getString("nome_exibicao"),
-                        rs.getString("login")
-                    );
-                    return usuario;
-                }
-            }
-        } catch (SQLException e) {
+        try {
+            var row = oficialJdbc.queryForMap(sql, idUsuario);
+            return new Usuario(
+                (Integer) row.get("id_usuario"),
+                (String) row.get("nome_exibicao"),
+                (String) row.get("login")
+            );
+        } catch (Exception e) {
             System.err.println("Erro ao buscar usuário: " + e.getMessage());
         }
         return null;

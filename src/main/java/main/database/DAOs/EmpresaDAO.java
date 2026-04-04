@@ -6,7 +6,7 @@ import main.database.GenericDAO;
 import main.models.Empresa;
 
 @Component
-public abstract class EmpresaDAO extends GenericDAO <Empresa, Integer> {
+public class EmpresaDAO extends GenericDAO <Empresa, Integer> {
 
     public static java.util.List<Empresa> findAllStatic() {
         return GenericDAO.findAllStatic(EmpresaDAO.class);
@@ -39,14 +39,14 @@ public abstract class EmpresaDAO extends GenericDAO <Empresa, Integer> {
     }
     
     @Override
-    protected void setIdGerado(Empresa e, java.sql.ResultSet keys) throws java.sql.SQLException {
-        e.setIdEmpresa(keys.getInt(1));
+    protected void setGeneratedId(Empresa e, Number id) {
+        e.setIdEmpresa(id.intValue());
     }
 
     @Override
     protected String getSqlInsert() {
         return """
-                (razao_social, nome_fantasia, cnpj, inscricao_estadual, inscricao_municipal,
+                INSERT INTO empresa (razao_social, nome_fantasia, cnpj, inscricao_estadual, inscricao_municipal,
                  regime_tributario, crt, logradouro, numero, complemento, bairro,
                  cidade, uf, cep, cod_municipio_ibge, telefone, email,
                  logo, certificado_digital, senha_certificado,

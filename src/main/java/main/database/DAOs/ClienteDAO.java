@@ -10,7 +10,7 @@ import main.database.GenericDAO;
 import main.models.Cliente;
 
 @Component
-public abstract class ClienteDAO extends GenericDAO<Cliente, Integer> {
+public class ClienteDAO extends GenericDAO<Cliente, Integer> {
 
     public static java.util.List<Cliente> findAllStatic() {
         return GenericDAO.findAllStatic(ClienteDAO.class);
@@ -42,20 +42,14 @@ public abstract class ClienteDAO extends GenericDAO<Cliente, Integer> {
         return "id_cliente";
     }
 
-    
     @Override
-    protected void setIdGerado(Cliente c, ResultSet keys) throws SQLException {
-        c.setIdCliente(keys.getInt(1));
+    protected void setGeneratedId(Cliente c, Number id) {
+        c.setIdCliente(id.intValue());
     }
 
     @Override
     protected String getSqlInsert() {
-        return """
-                INSERT INTO clientes
-                (cnpj, razao_social, nome_fantasia, inscricao_estadual, email_cliente,
-                 telefone_cliente, id_endereco_cliente, status_cliente, data_nascimento,
-                 limite_credito, ativo, data_cadastro, data_atualizacao)
-                """;
+        return "INSERT INTO clientes (cnpj, razao_social, nome_fantasia, inscricao_estadual, email_cliente, telefone_cliente, id_endereco_cliente, status_cliente, data_nascimento, limite_credito, ativo, data_cadastro, data_atualizacao) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
     }
 
     @Override

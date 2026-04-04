@@ -43,8 +43,8 @@ public class EnderecoDAO extends GenericDAO<Endereco, Integer> {
     }
 
     @Override
-    protected void setIdGerado(Endereco e, ResultSet keys) throws SQLException {
-        e.setIdEndereco(keys.getInt(1));
+    protected void setGeneratedId(Endereco e, Number id) {
+        e.setIdEndereco(id.intValue());
     }
 
     @Override

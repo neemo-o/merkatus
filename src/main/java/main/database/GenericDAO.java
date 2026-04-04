@@ -1,29 +1,30 @@
 package main.database;
 
-import java.sql.Connection;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreatorFactory;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.jdbc.core.SqlParameter;
+import org.springframework.jdbc.support.lob.DefaultLobHandler;
+import org.springframework.jdbc.core.support.AbstractLobCreatingPreparedStatementCallback;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
-import main.util.SpringContextProvider;
-
 public abstract class GenericDAO<T, ID> {
 
     @Autowired
-    private DatabaseManager databaseManager;
+    private JdbcTemplate jdbcTemplate;
 
-    // ==============================
-    // Conexão
-    // ==============================
-
-    protected Connection getConnection() throws SQLException {
-        return databaseManager.getOficialConnection();
+    protected JdbcTemplate getJdbc() {
+        return jdbcTemplate;
     }
 
     // ==============================
@@ -39,130 +40,113 @@ public abstract class GenericDAO<T, ID> {
     protected abstract String getSqlUpdate();
 
     // ==============================
-    // Operações genéricas prontas
+    // Operações genéricas (agora via JdbcTemplate)
     // ==============================
 
-    public List<T> findAll() throws SQLException {
-        List<T> lista = new ArrayList<>();
+    public List<T> findAll() {
         String sql = "SELECT * FROM " + getTabela() + " ORDER BY " + getColunaId();
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                lista.add(mapear(rs));
-            }
-        }
-        return lista;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> mapear(rs));
     }
 
-    public Optional<T> findById(ID id) throws SQLException {
+    public Optional<T> findById(ID id) {
         String sql = "SELECT * FROM " + getTabela() + " WHERE " + getColunaId() + " = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setObject(1, id);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapear(rs));
-                }
-            }
-        }
-        return Optional.empty();
+        List<T> result = jdbcTemplate.query(sql, (rs, rowNum) -> mapear(rs), id);
+        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 
-    public boolean deleteById(ID id) throws SQLException {
+    public boolean deleteById(ID id) {
         String sql = "DELETE FROM " + getTabela() + " WHERE " + getColunaId() + " = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setObject(1, id);
-            return stmt.executeUpdate() > 0;
-        }
+        return jdbcTemplate.update(sql, id) > 0;
     }
 
-    public long count() throws SQLException {
+    public long count() {
         String sql = "SELECT COUNT(*) FROM " + getTabela();
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            if (rs.next()) return rs.getLong(1);
-        }
-        return 0;
+        return jdbcTemplate.queryForObject(sql, Long.class);
     }
 
-    public static <T, ID, D extends GenericDAO<T, ID>> java.util.List<T> findAllStatic(Class<D> daoClass) {
-        try {
-            return SpringContextProvider.getBean(daoClass).findAll();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static <T, ID, D extends GenericDAO<T, ID>> T findByIdStatic(Class<D> daoClass, ID id) {
-        try {
-            return SpringContextProvider.getBean(daoClass).findById(id).orElse(null);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static <T, ID, D extends GenericDAO<T, ID>> boolean deleteByIdStatic(Class<D> daoClass, ID id) {
-        try {
-            return SpringContextProvider.getBean(daoClass).deleteById(id);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static <T, ID, D extends GenericDAO<T, ID>> T insertStatic(Class<D> daoClass, T entidade) {
-        try {
-            return SpringContextProvider.getBean(daoClass).save(entidade);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static <T, ID, D extends GenericDAO<T, ID>> boolean updateStatic(Class<D> daoClass, T entidade) {
-        try {
-            return SpringContextProvider.getBean(daoClass).update(entidade);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public T save(T entidade) throws SQLException {
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(
-                     getSqlInsert(), Statement.RETURN_GENERATED_KEYS)) {
-
+    public T save(T entidade) {
+        jdbcTemplate.update(con -> {
+            PreparedStatement stmt = con.prepareStatement(getSqlInsert(), Statement.RETURN_GENERATED_KEYS);
             setParametrosInsert(stmt, entidade);
-            stmt.executeUpdate();
+            return stmt;
+        });
 
-            try (ResultSet keys = stmt.getGeneratedKeys()) {
-                if (keys.next()) {
-                    setIdGerado(entidade, keys);
-                }
-            }
+        // We need a KeyHolder to get the generated key
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            PreparedStatement stmt = con.prepareStatement(getSqlInsert(), Statement.RETURN_GENERATED_KEYS);
+            setParametrosInsert(stmt, entidade);
+            return stmt;
+        }, keyHolder);
+
+        Number key = keyHolder.getKey();
+        if (key != null) {
+            setGeneratedId(entidade, key);
         }
+
         return entidade;
     }
 
-    public boolean update(T entidade) throws SQLException {
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(getSqlUpdate())) {
-
+    public boolean update(T entidade) {
+        return jdbcTemplate.update(con -> {
+            PreparedStatement stmt = con.prepareStatement(getSqlUpdate());
             setParametrosUpdate(stmt, entidade);
-            return stmt.executeUpdate() > 0;
+            return stmt;
+        }) > 0;
+    }
+
+    // ==============================
+    // Wrappers estáticos para uso em controllers JavaFX sem @Autowired
+    // ==============================
+
+    @SuppressWarnings("unchecked")
+    public static <T, D extends GenericDAO<T, ?>> java.util.List<T> findAllStatic(Class<D> daoClass) {
+        try {
+            return main.util.SpringContextProvider.getBean(daoClass).findAll();
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao buscar todos os registros de " + daoClass.getSimpleName(), e);
         }
     }
 
-    // Sobrescreva nos DAOs que precisam retornar o ID gerado
-    protected void setIdGerado(T entidade, ResultSet keys) throws SQLException {}
+    @SuppressWarnings("unchecked")
+    public static <T, ID, D extends GenericDAO<T, ID>> T findByIdStatic(Class<D> daoClass, ID id) {
+        try {
+            return main.util.SpringContextProvider.getBean(daoClass).findById(id).orElse(null);
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao buscar registro por ID em " + daoClass.getSimpleName(), e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T, ID, D extends GenericDAO<T, ID>> boolean deleteByIdStatic(Class<D> daoClass, ID id) {
+        try {
+            return main.util.SpringContextProvider.getBean(daoClass).deleteById(id);
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao deletar registro em " + daoClass.getSimpleName(), e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T, D extends GenericDAO<T, ?>> T insertStatic(Class<D> daoClass, T entidade) {
+        try {
+            return main.util.SpringContextProvider.getBean(daoClass).save(entidade);
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao inserir registro em " + daoClass.getSimpleName(), e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T, D extends GenericDAO<T, ?>> boolean updateStatic(Class<D> daoClass, T entidade) {
+        try {
+            return main.util.SpringContextProvider.getBean(daoClass).update(entidade);
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao atualizar registro em " + daoClass.getSimpleName(), e);
+        }
+    }
+
+    // ==============================
+    // Sobrescrever nos DAOs filhos quando necessário
+    // ==============================
+
+    protected void setGeneratedId(T entidade, Number id) {}
 }

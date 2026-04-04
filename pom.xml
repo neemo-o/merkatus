@@ -28,16 +28,10 @@
     </properties>
 
     <dependencies>
-        <!-- Spring Boot — contexto e injeção de dependência apenas -->
+        <!-- Spring Boot — JDBC com JdbcTemplate -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-        </dependency>
-
-        <!-- Pool de conexões -->
-        <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
 
         <!-- PostgreSQL -->

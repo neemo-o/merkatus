@@ -48,7 +48,7 @@ public class ProdutoModal extends BaseModal<Produto> {
     public void initialize() {
         // Carrega os combos de filtro
         cbCategoria.getItems().add(null);
-        cbCategoria.getItems().addAll(CategoriaDAO.());
+        cbCategoria.getItems().addAll(CategoriaDAO.findAllStatic());
         cbCategoria.setOnAction(e -> applyFilters());
 
         cbFornecedor.getItems().add(null);

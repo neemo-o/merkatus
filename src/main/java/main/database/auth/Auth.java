@@ -1,19 +1,19 @@
 package main.database.auth;
 
-import main.database.DatabaseManager;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import javax.sql.DataSource;
 
 @Component
 public class Auth {
 
-    @Autowired
-    private DatabaseManager databaseManager;
+    private final JdbcTemplate licencasJdbc;
+
+    public Auth(@Qualifier("licencasDataSource") DataSource licencasDataSource) {
+        this.licencasJdbc = new JdbcTemplate(licencasDataSource);
+    }
 
     public boolean validateCNPJ(String cnpj) {
         String sql = """
@@ -23,26 +23,20 @@ public class Auth {
             WHERE c.cnpj = ? AND c.ativo = TRUE
             """;
 
-        try (Connection conn = databaseManager.getLicencasConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, cnpj);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return "ATIVA".equals(rs.getString("status"));
-                }
-            }
-        } catch (SQLException e) {
+        try {
+            String status = licencasJdbc.queryForObject(sql, String.class, cnpj);
+            return "ATIVA".equals(status);
+        } catch (Exception e) {
             System.err.println("Erro ao validar CNPJ: " + e.getMessage());
         }
         return false;
     }
 
     public boolean testConnection() {
-        try (Connection conn = databaseManager.getLicencasConnection()) {
-            return conn != null && !conn.isClosed();
-        } catch (SQLException e) {
+        try {
+            licencasJdbc.queryForObject("SELECT 1", Integer.class);
+            return true;
+        } catch (Exception e) {
             System.err.println("Erro ao testar conexão: " + e.getMessage());
             return false;
         }

@@ -43,8 +43,8 @@ public class ProdutoDAO extends GenericDAO<Produto, Integer> {
     }
 
     @Override
-    protected void setIdGerado(Produto p, ResultSet keys) throws SQLException {
-        p.setIdProduto(keys.getInt(1));
+    protected void setGeneratedId(Produto p, Number id) {
+        p.setIdProduto(id.intValue());
     }
 
     @Override

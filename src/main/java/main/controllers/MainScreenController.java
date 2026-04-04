@@ -1,13 +1,13 @@
 package main.controllers;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+
+import javax.sql.DataSource;
 
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -27,7 +27,6 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import main.Modal.ModalManager;
 import main.Modal.ModalType;
-import main.database.DatabaseManager;
 import main.models.Usuario;
 import main.util.FXMLLoaderFactory;
 import main.util.SessionManager;
@@ -35,11 +34,16 @@ import main.util.SessionManager;
 @Component
 public class MainScreenController {
 
-    @Autowired
-    private DatabaseManager databaseManager;
+    private final JdbcTemplate oficialJdbc;
 
-    @Autowired
-    private FXMLLoaderFactory loaderFactory;
+    private final FXMLLoaderFactory loaderFactory;
+
+    public MainScreenController(
+            @Qualifier("oficialDataSource") DataSource oficialDataSource,
+            FXMLLoaderFactory loaderFactory) {
+        this.oficialJdbc = new JdbcTemplate(oficialDataSource);
+        this.loaderFactory = loaderFactory;
+    }
 
     @FXML
     private Button minimizeButton;
@@ -96,7 +100,6 @@ public class MainScreenController {
 
         ipLabel.setText("127.0.0.1");
 
-        // Exibe o usuário da sessão no rodapé
         Usuario usuario = SessionManager.getUsuarioAtual();
         if (usuario != null) {
             usuarioLabel.setText(usuario.getNome());
@@ -123,16 +126,11 @@ public class MainScreenController {
                     COALESCE((SELECT SUM(valor_total) FROM venda), 0)   AS total_vendas
                 """;
 
-        try (Connection conn = databaseManager.getOficialConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                ResultSet rs = stmt.executeQuery()) {
-
-            if (rs.next()) {
-                vendasHojeText.setText(String.format("R$ %.2f", rs.getDouble("total_vendas")));
-                produtosText.setText(String.valueOf(rs.getInt("total_produtos")));
-                clientesText.setText(String.valueOf(rs.getInt("total_clientes")));
-            }
-
+        try {
+            var row = oficialJdbc.queryForMap(sql);
+            vendasHojeText.setText(String.format("R$ %.2f", row.get("total_vendas")));
+            produtosText.setText(String.valueOf(row.get("total_produtos")));
+            clientesText.setText(String.valueOf(row.get("total_clientes")));
         } catch (Exception e) {
             System.err.println("Erro ao carregar dashboard: " + e.getMessage());
         }

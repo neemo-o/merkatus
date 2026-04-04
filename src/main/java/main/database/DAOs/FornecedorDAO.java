@@ -39,14 +39,14 @@ public class FornecedorDAO extends GenericDAO<Fornecedor, Integer> {
     }
 
     @Override
-    protected void setIdGerado(Fornecedor f, java.sql.ResultSet keys) throws java.sql.SQLException {
-        f.setIdFornecedor(keys.getInt(1));
+    protected void setGeneratedId(Fornecedor f, Number id) {
+        f.setIdFornecedor(id.intValue());
     }
 
     @Override
     protected String getSqlInsert() {
         return """
-                (razao_social, nome_fantasia, cnpj, inscricao_estadual, telefone, email,
+                INSERT INTO fornecedor (razao_social, nome_fantasia, cnpj, inscricao_estadual, telefone, email,
                  logradouro, numero, complemento, bairro, cidade, uf, cep)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """;
@@ -90,7 +90,7 @@ public class FornecedorDAO extends GenericDAO<Fornecedor, Integer> {
     @Override
     protected String getSqlUpdate() {
         return """
-                SET razao_social = ?, nome_fantasia = ?, cnpj = ?, inscricao_estadual = ?,
+                UPDATE fornecedor SET razao_social = ?, nome_fantasia = ?, cnpj = ?, inscricao_estadual = ?,
                     telefone = ?, email = ?, logradouro = ?, numero = ?, complemento = ?,
                     bairro = ?, cidade = ?, uf = ?, cep = ?
                 WHERE id_fornecedor = ?
