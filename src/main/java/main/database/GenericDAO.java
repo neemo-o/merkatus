@@ -1,13 +1,17 @@
 package main.database;
 
-import com.zaxxer.hikari.HikariDataSource;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.sql.DataSource;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import main.util.SpringContextProvider;
 
 public abstract class GenericDAO<T, ID> {
 
@@ -91,6 +95,46 @@ public abstract class GenericDAO<T, ID> {
             if (rs.next()) return rs.getLong(1);
         }
         return 0;
+    }
+
+    public static <T, ID, D extends GenericDAO<T, ID>> java.util.List<T> findAllStatic(Class<D> daoClass) {
+        try {
+            return SpringContextProvider.getBean(daoClass).findAll();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T, ID, D extends GenericDAO<T, ID>> T findByIdStatic(Class<D> daoClass, ID id) {
+        try {
+            return SpringContextProvider.getBean(daoClass).findById(id).orElse(null);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T, ID, D extends GenericDAO<T, ID>> boolean deleteByIdStatic(Class<D> daoClass, ID id) {
+        try {
+            return SpringContextProvider.getBean(daoClass).deleteById(id);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T, ID, D extends GenericDAO<T, ID>> T insertStatic(Class<D> daoClass, T entidade) {
+        try {
+            return SpringContextProvider.getBean(daoClass).save(entidade);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T, ID, D extends GenericDAO<T, ID>> boolean updateStatic(Class<D> daoClass, T entidade) {
+        try {
+            return SpringContextProvider.getBean(daoClass).update(entidade);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public T save(T entidade) throws SQLException {

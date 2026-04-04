@@ -8,49 +8,28 @@ import org.springframework.stereotype.Component;
 
 import main.database.GenericDAO;
 import main.models.Categoria;
-import main.util.SpringContextProvider;
 
 @Component
 public class CategoriaDAO extends GenericDAO<Categoria, Integer> {
 
     public static java.util.List<Categoria> findAllStatic() {
-        try {
-            return SpringContextProvider.getBean(CategoriaDAO.class).findAll();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.findAllStatic(CategoriaDAO.class);
     }
 
     public static Categoria findByIdStatic(Integer id) {
-        try {
-            return SpringContextProvider.getBean(CategoriaDAO.class).findById(id).orElse(null);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.findByIdStatic(CategoriaDAO.class, id);
     }
 
     public static Categoria insertStatic(Categoria categoria) {
-        try {
-            return SpringContextProvider.getBean(CategoriaDAO.class).save(categoria);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.insertStatic(CategoriaDAO.class, categoria);
     }
 
     public static boolean updateStatic(Categoria categoria) {
-        try {
-            return SpringContextProvider.getBean(CategoriaDAO.class).update(categoria);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.updateStatic(CategoriaDAO.class, categoria);
     }
 
     public static boolean deleteByIdStatic(Integer id) {
-        try {
-            return SpringContextProvider.getBean(CategoriaDAO.class).deleteById(id);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.deleteByIdStatic(CategoriaDAO.class, id);
     }
 
     @Override

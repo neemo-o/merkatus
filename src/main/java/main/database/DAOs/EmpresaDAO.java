@@ -8,6 +8,26 @@ import main.models.Empresa;
 @Component
 public abstract class EmpresaDAO extends GenericDAO <Empresa, Integer> {
 
+    public static java.util.List<Empresa> findAllStatic() {
+        return GenericDAO.findAllStatic(EmpresaDAO.class);
+    }
+
+    public static Empresa findByIdStatic(Integer id) {
+        return GenericDAO.findByIdStatic(EmpresaDAO.class, id);
+    }
+
+    public static boolean deleteByIdStatic(Integer id) {
+        return GenericDAO.deleteByIdStatic(EmpresaDAO.class, id);
+    }
+
+    public static Empresa insertStatic(Empresa empresa) {
+        return GenericDAO.insertStatic(EmpresaDAO.class, empresa);
+    }
+
+    public static boolean updateStatic(Empresa empresa) {
+        return GenericDAO.updateStatic(EmpresaDAO.class, empresa);
+    }
+
     @Override
     protected String getTabela() {
         return "empresa";

@@ -4,49 +4,28 @@ import org.springframework.stereotype.Component;
 
 import main.database.GenericDAO;
 import main.models.Fornecedor;
-import main.util.SpringContextProvider;
 
 @Component
 public class FornecedorDAO extends GenericDAO<Fornecedor, Integer> {
 
     public static java.util.List<Fornecedor> findAllStatic() {
-        try {
-            return SpringContextProvider.getBean(FornecedorDAO.class).findAll();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.findAllStatic(FornecedorDAO.class);
     }
 
     public static Fornecedor findByIdStatic(Integer id) {
-        try {
-            return SpringContextProvider.getBean(FornecedorDAO.class).findById(id).orElse(null);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.findByIdStatic(FornecedorDAO.class, id);
     }
 
     public static Fornecedor insertStatic(Fornecedor fornecedor) {
-        try {
-            return SpringContextProvider.getBean(FornecedorDAO.class).save(fornecedor);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.insertStatic(FornecedorDAO.class, fornecedor);
     }
 
     public static boolean updateStatic(Fornecedor fornecedor) {
-        try {
-            return SpringContextProvider.getBean(FornecedorDAO.class).update(fornecedor);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.updateStatic(FornecedorDAO.class, fornecedor);
     }
 
     public static boolean deleteByIdStatic(Integer id) {
-        try {
-            return SpringContextProvider.getBean(FornecedorDAO.class).deleteById(id);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.deleteByIdStatic(FornecedorDAO.class, id);
     }
 
     @Override

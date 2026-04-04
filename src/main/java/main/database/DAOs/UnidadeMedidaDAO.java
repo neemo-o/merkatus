@@ -8,25 +8,28 @@ import org.springframework.stereotype.Component;
 
 import main.database.GenericDAO;
 import main.models.UnidadeMedida;
-import main.util.SpringContextProvider;
 
 @Component
 public class UnidadeMedidaDAO extends GenericDAO<UnidadeMedida, Integer> {
 
     public static java.util.List<UnidadeMedida> findAllStatic() {
-        try {
-            return SpringContextProvider.getBean(UnidadeMedidaDAO.class).findAll();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.findAllStatic(UnidadeMedidaDAO.class);
     }
 
     public static UnidadeMedida findByIdStatic(Integer id) {
-        try {
-            return SpringContextProvider.getBean(UnidadeMedidaDAO.class).findById(id).orElse(null);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.findByIdStatic(UnidadeMedidaDAO.class, id);
+    }
+
+    public static boolean deleteByIdStatic(Integer id) {
+        return GenericDAO.deleteByIdStatic(UnidadeMedidaDAO.class, id);
+    }
+
+    public static UnidadeMedida insertStatic(UnidadeMedida unidadeMedida) {
+        return GenericDAO.insertStatic(UnidadeMedidaDAO.class, unidadeMedida);
+    }
+
+    public static boolean updateStatic(UnidadeMedida unidadeMedida) {
+        return GenericDAO.updateStatic(UnidadeMedidaDAO.class, unidadeMedida);
     }
 
     @Override

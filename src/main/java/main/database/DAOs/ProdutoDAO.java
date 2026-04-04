@@ -8,49 +8,28 @@ import org.springframework.stereotype.Component;
 
 import main.database.GenericDAO;
 import main.models.Produto;
-import main.util.SpringContextProvider;
 
 @Component
 public class ProdutoDAO extends GenericDAO<Produto, Integer> {
 
     public static java.util.List<Produto> findAllStatic() {
-        try {
-            return SpringContextProvider.getBean(ProdutoDAO.class).findAll();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.findAllStatic(ProdutoDAO.class);
     }
 
     public static Produto findByIdStatic(Integer id) {
-        try {
-            return SpringContextProvider.getBean(ProdutoDAO.class).findById(id).orElse(null);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.findByIdStatic(ProdutoDAO.class, id);
     }
 
     public static boolean deleteByIdStatic(Integer id) {
-        try {
-            return SpringContextProvider.getBean(ProdutoDAO.class).deleteById(id);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.deleteByIdStatic(ProdutoDAO.class, id);
     }
 
     public static Produto insertStatic(Produto produto) {
-        try {
-            return SpringContextProvider.getBean(ProdutoDAO.class).save(produto);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.insertStatic(ProdutoDAO.class, produto);
     }
 
     public static boolean updateStatic(Produto produto) {
-        try {
-            return SpringContextProvider.getBean(ProdutoDAO.class).update(produto);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return GenericDAO.updateStatic(ProdutoDAO.class, produto);
     }
 
     @Override
