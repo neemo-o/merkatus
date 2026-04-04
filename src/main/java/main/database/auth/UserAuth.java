@@ -1,6 +1,7 @@
 package main.database.auth;
 
 import main.database.DatabaseManager;
+import main.models.Usuario;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -37,5 +38,32 @@ public class UserAuth {
             System.err.println("Erro ao autenticar usuário: " + e.getMessage());
         }
         return false;
+    }
+
+    /**
+     * Busca um usuário pelo ID (independente de senha). Retorna null se nao existir.
+     */
+    public Usuario buscarPorId(Integer idUsuario) {
+        String sql = "SELECT id_usuario, nome_exibicao, login FROM usuarios WHERE id_usuario = ? AND ativo = TRUE";
+
+        try (Connection conn = databaseManager.getOficialConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, idUsuario);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    Usuario usuario = new Usuario(
+                        rs.getInt("id_usuario"),
+                        rs.getString("nome_exibicao"),
+                        rs.getString("login")
+                    );
+                    return usuario;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao buscar usuário: " + e.getMessage());
+        }
+        return null;
     }
 }

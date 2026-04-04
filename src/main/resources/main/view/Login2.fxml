@@ -41,6 +41,12 @@
 
       <!-- Campos alinhados -->
       <VBox alignment="CENTER" prefHeight="168.0" prefWidth="294.0" spacing="10.0">
+
+        <!-- Label do usuário encontrado -->
+        <Label fx:id="usuarioEncontradoLabel" visible="false" maxHeight="-Infinity" minHeight="-Infinity" prefHeight="18.0">
+          <VBox.margin><Insets bottom="2.0" /></VBox.margin>
+        </Label>
+
         <HBox alignment="CENTER_LEFT" spacing="8.0">
           <Label alignment="CENTER_RIGHT" minWidth="55.0" text="Usuário:" textFill="#437d8d">
             <font><Font name="Segoe UI Semibold" size="13.0" /></font>
