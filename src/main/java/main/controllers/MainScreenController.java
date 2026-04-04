@@ -1,11 +1,21 @@
 package main.controllers;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -14,19 +24,11 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import javafx.geometry.Rectangle2D;
 import javafx.util.Duration;
+import main.Modal.ModalManager;
+import main.Modal.ModalType;
 import main.database.DatabaseManager;
 import main.util.FXMLLoaderFactory;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Component
 public class MainScreenController {
@@ -198,7 +200,7 @@ public class MainScreenController {
     @FXML
     private void handleProdutos() {
         setActiveButton(btnProdutos);
-        carregarTela("/main/view/Produtos.fxml");
+        ModalManager.open(ModalType.PRODUTO, (Stage) contentArea.getScene().getWindow());
     }
 
     @FXML

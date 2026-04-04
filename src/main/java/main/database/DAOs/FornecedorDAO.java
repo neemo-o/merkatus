@@ -1,18 +1,32 @@
-package main.database;
+package main.database.DAOs;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import main.models.Empresa;
-import main.models.Endereco;
+import main.database.GenericDAO;
 import main.models.Fornecedor;
 
 @Component
-public abstract class FornecedorDAO extends GenericDAO<Fornecedor, Integer> {
+public class FornecedorDAO extends GenericDAO<Fornecedor, Integer> {
 
-    @Autowired
-    protected Endereco en;
-    protected Empresa e;
+    public static java.util.List<Fornecedor> findAllStatic() {
+        return GenericDAO.findAllStatic(FornecedorDAO.class);
+    }
+
+    public static Fornecedor findByIdStatic(Integer id) {
+        return GenericDAO.findByIdStatic(FornecedorDAO.class, id);
+    }
+
+    public static Fornecedor insertStatic(Fornecedor fornecedor) {
+        return GenericDAO.insertStatic(FornecedorDAO.class, fornecedor);
+    }
+
+    public static boolean updateStatic(Fornecedor fornecedor) {
+        return GenericDAO.updateStatic(FornecedorDAO.class, fornecedor);
+    }
+
+    public static boolean deleteByIdStatic(Integer id) {
+        return GenericDAO.deleteByIdStatic(FornecedorDAO.class, id);
+    }
 
     @Override
     protected String getTabela() {
@@ -40,20 +54,19 @@ public abstract class FornecedorDAO extends GenericDAO<Fornecedor, Integer> {
 
     @Override
     protected void setParametrosInsert(java.sql.PreparedStatement stmt, Fornecedor f) throws java.sql.SQLException {
-
         stmt.setString(1, f.getRazaoSocial());
         stmt.setString(2, f.getNomeFantasia());
         stmt.setString(3, f.getCnpj());
-        stmt.setString(4, e.getInscricaoEstadual());
+        stmt.setString(4, null); // inscricao_estadual não disponível no model atual
         stmt.setString(5, f.getTelefone());
         stmt.setString(6, f.getEMail());
-        stmt.setString(7, en.getLogradouro());
-        stmt.setString(8, en.getNumero());
-        stmt.setString(9, en.getComplemento());
-        stmt.setString(10, en.getBairro());
-        stmt.setString(11, en.getCidade());
-        stmt.setString(12, e.getUf());
-        stmt.setString(13, en.getCep());
+        stmt.setString(7, null); // logradouro
+        stmt.setString(8, null); // numero
+        stmt.setString(9, null); // complemento
+        stmt.setString(10, null); // bairro
+        stmt.setString(11, null); // cidade
+        stmt.setString(12, null); // uf
+        stmt.setString(13, null); // cep
     }
 
     @Override
@@ -61,16 +74,16 @@ public abstract class FornecedorDAO extends GenericDAO<Fornecedor, Integer> {
         stmt.setString(1, f.getRazaoSocial());
         stmt.setString(2, f.getNomeFantasia());
         stmt.setString(3, f.getCnpj());
-        stmt.setString(4, e.getInscricaoEstadual());
+        stmt.setString(4, null); // inscricao_estadual
         stmt.setString(5, f.getTelefone());
         stmt.setString(6, f.getEMail());
-        stmt.setString(7, en.getLogradouro());
-        stmt.setString(8, en.getNumero());
-        stmt.setString(9, en.getComplemento());
-        stmt.setString(10, en.getBairro());
-        stmt.setString(11, en.getCidade());
-        stmt.setString(12, e.getUf());
-        stmt.setString(13, en.getCep());
+        stmt.setString(7, null); // logradouro
+        stmt.setString(8, null); // numero
+        stmt.setString(9, null); // complemento
+        stmt.setString(10, null); // bairro
+        stmt.setString(11, null); // cidade
+        stmt.setString(12, null); // uf
+        stmt.setString(13, null); // cep
         stmt.setInt(14, f.getIdFornecedor()); // WHERE id_fornecedor = ?
     }
 
@@ -91,17 +104,12 @@ public abstract class FornecedorDAO extends GenericDAO<Fornecedor, Integer> {
         f.setRazaoSocial(rs.getString("razao_social"));
         f.setNomeFantasia(rs.getString("nome_fantasia"));
         f.setCnpj(rs.getString("cnpj"));
-        e.setInscricaoEstadual("inscricaoEstadual");
         f.setTelefone(rs.getString("telefone"));
         f.setEMail(rs.getString("email"));
-        en.setLogradouro(rs.getString("logradouro"));
-        en.setNumero(rs.getString("numero"));
-        en.setComplemento(rs.getString("complemento"));
-        en.setBairro(rs.getString("bairro"));
-        en.setCidade(rs.getString("cidade"));
-        e.setUf(rs.getString("uf"));
-        en.setCep(rs.getString("cep"));
-        
+
+        // Não temos campos de endereço no modelo Fornecedor atual, apenas idEndereco
+        f.setIdEndereco(rs.getObject("id_endereco", Integer.class));
+
         return f;
     }
 }

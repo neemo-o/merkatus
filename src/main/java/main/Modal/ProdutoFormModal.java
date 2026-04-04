@@ -11,6 +11,15 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
+import main.models.Categoria;
+import main.models.Fornecedor;
+import main.models.Produto;
+import main.models.UnidadeMedida;
+import main.database.DAOs.CategoriaDAO;
+import main.database.DAOs.FornecedorDAO;
+import main.database.DAOs.ProdutoDAO;
+import main.database.DAOs.UnidadeMedidaDAO;
+
 import java.math.BigDecimal;
 
 
@@ -109,9 +118,9 @@ public class ProdutoFormModal {
         chkAtivo        = new CheckBox("Ativo");
         chkAtivo.setSelected(true);
 
-        cbUnidade.getItems().addAll(UnidadeMedidaDAO.findAll());
-        cbCategoria.getItems().addAll(CategoriaDAO.findAll());
-        cbFornecedor.getItems().addAll(FornecedorDAO.findAll());
+        cbUnidade.getItems().addAll(UnidadeMedidaDAO.findAllStatic());
+        cbCategoria.getItems().addAll(CategoriaDAO.findAllStatic());
+        cbFornecedor.getItems().addAll(FornecedorDAO.findAllStatic());
 
         txtDescricao.setPrefWidth(300);
 
@@ -237,8 +246,8 @@ public class ProdutoFormModal {
         txtDescricao.setText(produto.getDescricao());
         txtCodigoBarras.setText(produto.getCodigoBarras());
         cbUnidade.setValue(findUnidadeMedida(produto.getUnidadeMedida()));
-        cbCategoria.setValue(CategoriaDAO.findById(produto.getIdCategoria()));
-        cbFornecedor.setValue(FornecedorDAO.findById(produto.getIdFornecedor()));
+        cbCategoria.setValue(CategoriaDAO.findByIdStatic(produto.getIdCategoria()));
+        cbFornecedor.setValue(FornecedorDAO.findByIdStatic(produto.getIdFornecedor()));
         chkAtivo.setSelected(produto.isAtivo());
 
         txtPrecoCusto.setText(produto.getPrecoCusto() != null ? produto.getPrecoCusto().toString() : "");
@@ -282,9 +291,10 @@ public class ProdutoFormModal {
 
         produto.setDescricao(txtDescricao.getText());
         produto.setCodigoBarras(txtCodigoBarras.getText());
-        produto.setUnidadeMedida(cbUnidade.getValue());
-        produto.setCategoria(cbCategoria.getValue());
-        produto.setFornecedor(cbFornecedor.getValue());
+        produto.setUnidadeMedida(cbUnidade.getValue() != null ? cbUnidade.getValue().getSigla() : null);
+        produto.setIdUnidadeMedida(cbUnidade.getValue() != null ? cbUnidade.getValue().getIdUnidade() : null);
+        produto.setIdCategoria(cbCategoria.getValue() != null ? cbCategoria.getValue().getIdCategoria() : null);
+        produto.setIdFornecedor(cbFornecedor.getValue() != null ? cbFornecedor.getValue().getIdFornecedor() : null);
         produto.setAtivo(chkAtivo.isSelected());
 
         produto.setPrecoCusto(parseBigDecimal(txtPrecoCusto.getText()));
@@ -313,9 +323,9 @@ public class ProdutoFormModal {
         produto.setAliqIpi(parseBigDecimal(txtAliqIpi.getText()));
 
         if (produto.getIdProduto() == null) {
-            ProdutoDAO.insert(produto);
+            ProdutoDAO.insertStatic(produto);
         } else {
-            ProdutoDAO.update(produto);
+            ProdutoDAO.updateStatic(produto);
         }
 
         stage.close();

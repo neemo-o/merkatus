@@ -1,14 +1,36 @@
-package main.database;
+package main.database.DAOs;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.springframework.stereotype.Component;
+
+import main.database.GenericDAO;
 import main.models.Produto;
 
 @Component
 public class ProdutoDAO extends GenericDAO<Produto, Integer> {
+
+    public static java.util.List<Produto> findAllStatic() {
+        return GenericDAO.findAllStatic(ProdutoDAO.class);
+    }
+
+    public static Produto findByIdStatic(Integer id) {
+        return GenericDAO.findByIdStatic(ProdutoDAO.class, id);
+    }
+
+    public static boolean deleteByIdStatic(Integer id) {
+        return GenericDAO.deleteByIdStatic(ProdutoDAO.class, id);
+    }
+
+    public static Produto insertStatic(Produto produto) {
+        return GenericDAO.insertStatic(ProdutoDAO.class, produto);
+    }
+
+    public static boolean updateStatic(Produto produto) {
+        return GenericDAO.updateStatic(ProdutoDAO.class, produto);
+    }
 
     @Override
     protected String getTabela() {

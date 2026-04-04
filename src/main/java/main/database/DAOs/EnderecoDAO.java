@@ -1,4 +1,4 @@
-package main.database;
+package main.database.DAOs;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -6,10 +6,31 @@ import java.sql.SQLException;
 
 import org.springframework.stereotype.Component;
 
+import main.database.GenericDAO;
 import main.models.Endereco;
 
 @Component
 public class EnderecoDAO extends GenericDAO<Endereco, Integer> {
+
+    public static java.util.List<Endereco> findAllStatic() {
+        return GenericDAO.findAllStatic(EnderecoDAO.class);
+    }
+
+    public static Endereco findByIdStatic(Integer id) {
+        return GenericDAO.findByIdStatic(EnderecoDAO.class, id);
+    }
+
+    public static boolean deleteByIdStatic(Integer id) {
+        return GenericDAO.deleteByIdStatic(EnderecoDAO.class, id);
+    }
+
+    public static Endereco insertStatic(Endereco endereco) {
+        return GenericDAO.insertStatic(EnderecoDAO.class, endereco);
+    }
+
+    public static boolean updateStatic(Endereco endereco) {
+        return GenericDAO.updateStatic(EnderecoDAO.class, endereco);
+    }
 
     @Override
     protected String getTabela() {

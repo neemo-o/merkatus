@@ -1,4 +1,4 @@
-package main.database;
+package main.database.DAOs;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -6,10 +6,31 @@ import java.sql.SQLException;
 
 import org.springframework.stereotype.Component;
 
+import main.database.GenericDAO;
 import main.models.Funcionario;
 
 @Component
 public class FuncionarioDAO extends GenericDAO<Funcionario, Integer> {
+
+    public static java.util.List<Funcionario> findAllStatic() {
+        return GenericDAO.findAllStatic(FuncionarioDAO.class);
+    }
+
+    public static Funcionario findByIdStatic(Integer id) {
+        return GenericDAO.findByIdStatic(FuncionarioDAO.class, id);
+    }
+
+    public static boolean deleteByIdStatic(Integer id) {
+        return GenericDAO.deleteByIdStatic(FuncionarioDAO.class, id);
+    }
+
+    public static Funcionario insertStatic(Funcionario funcionario) {
+        return GenericDAO.insertStatic(FuncionarioDAO.class, funcionario);
+    }
+
+    public static boolean updateStatic(Funcionario funcionario) {
+        return GenericDAO.updateStatic(FuncionarioDAO.class, funcionario);
+    }
 
     @Override
     protected String getTabela() {
