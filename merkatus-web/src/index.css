@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+@theme {
+  --color-accent: #00d4aa;
+  --color-accent-hover: #14b8a6;
+  --color-bg: #0a0a0f;
+  --color-surface: #12121a;
+  --color-border: #1e1e2e;
+  --color-text: #f0f0f0;
+  --color-muted: #6b7280;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-heading: 'Syne', system-ui, sans-serif;
+  --font-mono: 'Space Mono', monospace;
+}
+
+.dark {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface-alt: #1a1a2e;
+  --border: #1e1e2e;
+  --text: #f0f0f0;
+  --text-sec: #9ca3af;
+  --muted: #6b7280;
+  --accent: #163dbe;
+  --accent-hover: #062589;
+  --accent-bg: rgba(0, 212, 170, 0.06);
+}
+
+.light {
+  --bg: #e7e7e7;
+  --surface: #e9e9e9;
+  --surface-alt: #cfd3da;
+  --border: #c8cdd6;
+  --text: #1a1f36;
+  --text-sec: #4a5068;
+  --muted: #6a7490;
+  --accent: #093695;
+  --accent-hover: #042770;
+  --accent-bg: rgba(26, 86, 219, 0.1);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-snap-type: y proximity;
+}
+
+body {
+  font-family: var(--font-body);
+  margin: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Full-viewport sections */
+.section-full {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: start;
+  padding: 4.5rem 1.5rem 3rem;
+}
+
+.section-content {
+  max-width: 64rem;
+  width: 100%;
+}
+
+.animate-fade-in-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-fade-in-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.card-glow {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.dark .card-glow:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 30px rgba(0, 212, 170, 0.1), 0 8px 30px rgba(0, 0, 0, 0.4);
+  border-color: rgba(0, 68, 255, 0.25) !important;
+}
+
+.light .card-glow:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  border-color: rgba(26, 86, 219, 0.35) !important;
+}
+
+.topbar-scrolled {
+  backdrop-filter: blur(20px) !important;
+}
+
+.dark .topbar-scrolled {
+  background: rgba(10, 10, 15, 0.85) !important;
+  border-bottom-color: rgba(30, 30, 46, 0.6) !important;
+}
+
+.light .topbar-scrolled {
+  background: rgba(229, 232, 237, 0.85) !important;
+  border-bottom-color: rgba(200, 205, 214, 0.6) !important;
+}
+
+.page-transition {
+  animation: pageIn 0.4s ease-out;
+}
+
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Theme-aware utilities */
+.text-theme-accent     { color: var(--accent); }
+.bg-theme-accent       { background-color: var(--accent); }
+.border-theme-accent   { border-color: var(--accent); }
+.bg-theme-accent-bg    { background-color: var(--accent-bg); }
+.bg-theme-surface      { background-color: var(--surface); }
+.bg-theme-bg           { background-color: var(--bg); }
+.text-theme-muted      { color: var(--muted); }
+.text-theme-text       { color: var(--text); }
+.border-theme-border   { border-color: var(--border); }
+
+.btn-primary {
+  padding: 0.75rem 1.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.3s ease;
+  text-align: center;
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 0 25px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.btn-secondary {
+  padding: 0.75rem 1.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+  text-align: center;
+}
+.btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.menu-slide {
+  animation: menuSlide 0.3s ease-out;
+}
+
+@keyframes menuSlide {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
