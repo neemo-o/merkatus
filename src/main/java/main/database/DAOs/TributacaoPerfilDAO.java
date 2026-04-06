@@ -88,12 +88,12 @@ public class TributacaoPerfilDAO extends GenericDAO<TributacaoPerfil, Integer> {
 
     @Override
     protected String getSqlInsert() {
-        return "INSERT INTO tributacao_perfil (nome, descricao, ncm, cest, cst_icms, csosn, aliq_icms, aliq_icms_st, mva_st, cfop_venda, cfop_venda_interestadual, cst_pis, cst_cofins, aliq_pis, aliq_cofins, cst_ipi, aliq_ipi, ativo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        return "INSERT INTO tributacao_perfil (nome, descricao, ncm, cest, cst_icms, csosn, aliq_icms, aliq_icms_st, mva_st, cfop_venda, cfop_venda_interestadual, cst_pis, cst_cofins, aliq_pis, aliq_cofins, cst_ipi, aliq_ipi, ativo, data_cadastro, data_atualizacao) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     }
 
     @Override
     protected String getSqlUpdate() {
-        return "UPDATE tributacao_perfil SET nome = ?, descricao = ?, ncm = ?, cest = ?, cst_icms = ?, csosn = ?, aliq_icms = ?, aliq_icms_st = ?, mva_st = ?, cfop_venda = ?, cfop_venda_interestadual = ?, cst_pis = ?, cst_cofins = ?, aliq_pis = ?, aliq_cofins = ?, cst_ipi = ?, aliq_ipi = ?, ativo = ? WHERE id_tributacao = ?";
+        return "UPDATE tributacao_perfil SET nome = ?, descricao = ?, ncm = ?, cest = ?, cst_icms = ?, csosn = ?, aliq_icms = ?, aliq_icms_st = ?, mva_st = ?, cfop_venda = ?, cfop_venda_interestadual = ?, cst_pis = ?, cst_cofins = ?, aliq_pis = ?, aliq_cofins = ?, cst_ipi = ?, aliq_ipi = ?, ativo = ?, data_atualizacao = ? WHERE id_tributacao = ?";
     }
 
     @Override
@@ -116,6 +116,8 @@ public class TributacaoPerfilDAO extends GenericDAO<TributacaoPerfil, Integer> {
         stmt.setString(16, t.getCstIpi());
         stmt.setObject(17, t.getAliqIpi());
         stmt.setBoolean(18, t.isAtivo());
+        stmt.setObject(19, t.getDataCadastro());
+        stmt.setObject(20, t.getDataAtualizacao());
     }
 
     @Override
@@ -138,6 +140,7 @@ public class TributacaoPerfilDAO extends GenericDAO<TributacaoPerfil, Integer> {
         stmt.setString(16, t.getCstIpi());
         stmt.setObject(17, t.getAliqIpi());
         stmt.setBoolean(18, t.isAtivo());
-        stmt.setInt(19, t.getIdTributacao());
+        stmt.setObject(19, t.getDataAtualizacao());
+        stmt.setInt(20, t.getIdTributacao());
     }
 }

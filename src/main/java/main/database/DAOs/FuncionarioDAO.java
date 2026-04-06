@@ -12,26 +12,6 @@ import main.models.Funcionario;
 @Component
 public class FuncionarioDAO extends GenericDAO<Funcionario, Integer> {
 
-    public static java.util.List<Funcionario> findAllStatic() {
-        return GenericDAO.findAllStatic(FuncionarioDAO.class);
-    }
-
-    public static Funcionario findByIdStatic(Integer id) {
-        return GenericDAO.findByIdStatic(FuncionarioDAO.class, id);
-    }
-
-    public static boolean deleteByIdStatic(Integer id) {
-        return GenericDAO.deleteByIdStatic(FuncionarioDAO.class, id);
-    }
-
-    public static Funcionario insertStatic(Funcionario funcionario) {
-        return GenericDAO.insertStatic(FuncionarioDAO.class, funcionario);
-    }
-
-    public static boolean updateStatic(Funcionario funcionario) {
-        return GenericDAO.updateStatic(FuncionarioDAO.class, funcionario);
-    }
-
     @Override
     protected String getTabela() {
         return "funcionarios";
@@ -108,8 +88,8 @@ public class FuncionarioDAO extends GenericDAO<Funcionario, Integer> {
         f.setTelefone(rs.getString("telefone"));
         f.setEmail(rs.getString("email"));
         f.setAtivo(rs.getBoolean("ativo"));
-        java.sql.Timestamp tsCadastro = (java.sql.Timestamp) rs.getObject("data_cadastro");
-        f.setDataCadastro(tsCadastro != null ? tsCadastro.toLocalDateTime() : null);
+        java.sql.Timestamp tsCadastro = rs.getTimestamp("data_cadastro");
+        if (tsCadastro != null) f.setDataCadastro(tsCadastro.toLocalDateTime());
         java.sql.Timestamp tsAtualizacao = (java.sql.Timestamp) rs.getObject("data_atualizacao");
         f.setDataAtualizacao(tsAtualizacao != null ? tsAtualizacao.toLocalDateTime() : null);
         return f;

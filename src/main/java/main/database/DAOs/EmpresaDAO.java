@@ -8,26 +8,6 @@ import main.models.Empresa;
 @Component
 public class EmpresaDAO extends GenericDAO <Empresa, Integer> {
 
-    public static java.util.List<Empresa> findAllStatic() {
-        return GenericDAO.findAllStatic(EmpresaDAO.class);
-    }
-
-    public static Empresa findByIdStatic(Integer id) {
-        return GenericDAO.findByIdStatic(EmpresaDAO.class, id);
-    }
-
-    public static boolean deleteByIdStatic(Integer id) {
-        return GenericDAO.deleteByIdStatic(EmpresaDAO.class, id);
-    }
-
-    public static Empresa insertStatic(Empresa empresa) {
-        return GenericDAO.insertStatic(EmpresaDAO.class, empresa);
-    }
-
-    public static boolean updateStatic(Empresa empresa) {
-        return GenericDAO.updateStatic(EmpresaDAO.class, empresa);
-    }
-
     @Override
     protected String getTabela() {
         return "empresa";
@@ -52,8 +32,8 @@ public class EmpresaDAO extends GenericDAO <Empresa, Integer> {
                  logo, certificado_digital, senha_certificado,
                  ambiente_nfe, serie_nfce, serie_nfe,
                  proximo_nfce, proximo_nfe,
-                 token_csc, id_csc)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                 token_csc, id_csc, data_cadastro, data_atualizacao)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """;
     }
 
@@ -86,6 +66,8 @@ public class EmpresaDAO extends GenericDAO <Empresa, Integer> {
         stmt.setInt(25, e.getProximoNfe());
         stmt.setString(26, e.getTokenCsc());
         stmt.setString(27, e.getIdCsc());
+        stmt.setObject(28, e.getDataCadastro());
+        stmt.setObject(29, e.getDataAtualizacao());
     }
 
     @Override
@@ -117,7 +99,8 @@ public class EmpresaDAO extends GenericDAO <Empresa, Integer> {
         stmt.setInt(25, e.getProximoNfe());
         stmt.setString(26, e.getTokenCsc());
         stmt.setString(27, e.getIdCsc());
-        stmt.setInt(28, e.getIdEmpresa());
+        stmt.setObject(28, e.getDataAtualizacao());
+        stmt.setInt(29, e.getIdEmpresa());
     }
 
     @Override
@@ -150,7 +133,8 @@ public class EmpresaDAO extends GenericDAO <Empresa, Integer> {
                     proximo_nfce = ?,
                     proximo_nfe = ?,
                     token_csc = ?,
-                    id_csc = ?
+                    id_csc = ?,
+                    data_atualizacao = ?
                 WHERE id_empresa = ?
                 """;
     }
@@ -186,6 +170,10 @@ public class EmpresaDAO extends GenericDAO <Empresa, Integer> {
         e.setProximoNfe(rs.getInt("proximo_nfe"));
         e.setTokenCsc(rs.getString("token_csc"));
         e.setIdCsc(rs.getString("id_csc"));
+        java.sql.Timestamp tsCadastro = rs.getTimestamp("data_cadastro");
+        if (tsCadastro != null) e.setDataCadastro(tsCadastro.toLocalDateTime());
+        java.sql.Timestamp tsAtualizacao = rs.getTimestamp("data_atualizacao");
+        if (tsAtualizacao != null) e.setDataAtualizacao(tsAtualizacao.toLocalDateTime());
 
         return e;
     }

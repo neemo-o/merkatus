@@ -37,11 +37,11 @@ public class UserAuth {
 
         try {
             var row = oficialJdbc.queryForMap(sql, idUsuario);
-            return new Usuario(
-                (Integer) row.get("id_usuario"),
-                (String) row.get("nome_exibicao"),
-                (String) row.get("login")
-            );
+            Usuario u = new Usuario();
+            u.setIdUsuario((Integer) row.get("id_usuario"));
+            u.setNomeExibicao((String) row.get("nome_exibicao"));
+            u.setLogin((String) row.get("login"));
+            return u;
         } catch (Exception e) {
             System.err.println("Erro ao buscar usuário: " + e.getMessage());
         }

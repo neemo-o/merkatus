@@ -17,4 +17,9 @@ public class Categoria {
     private Integer       idTributacaoPadrao;        // FK → tributacao_perfil (nullable = sem padrão)
     private boolean       ativo = true;
     private LocalDateTime dataCadastro;
+
+    @Override
+    public String toString() {
+        return nome;
+    }
 }

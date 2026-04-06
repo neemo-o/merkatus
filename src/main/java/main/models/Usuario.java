@@ -1,36 +1,29 @@
 package main.models;
 
 import java.time.LocalDateTime;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
 public class Usuario {
 
     private Integer idUsuario;
-    private String nome;
+    private Integer idFuncionario;
+    private Integer idPerfil;
     private String login;
+    private String senhaHash;
+    private String nomeExibicao;
+    private String email;
+    private Short tentativasLogin;
+    private Boolean bloqueado;
+    private LocalDateTime ultimoLogin;
+    private Boolean ativo;
     private LocalDateTime dataCadastro;
-
-    public Usuario() {}
-
-    public Usuario(Integer idUsuario, String nome, String login) {
-        this.idUsuario = idUsuario;
-        this.nome = nome;
-        this.login = login;
-    }
-
-    public Integer getIdUsuario()           { return idUsuario; }
-    public void setIdUsuario(Integer v)     { this.idUsuario = v; }
-
-    public String getNome()                 { return nome; }
-    public void setNome(String v)           { this.nome = v; }
-
-    public String getLogin()                { return login; }
-    public void setLogin(String v)          { this.login = v; }
-
-    public LocalDateTime getDataCadastro()  { return dataCadastro; }
-    public void setDataCadastro(LocalDateTime v) { this.dataCadastro = v; }
+    private LocalDateTime dataAtualizacao;
 
     @Override
     public String toString() {
-        return nome != null ? nome : "Usuario #" + idUsuario;
+        return nomeExibicao != null ? nomeExibicao : "Usuario #" + idUsuario;
     }
 }

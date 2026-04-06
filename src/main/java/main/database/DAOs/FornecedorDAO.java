@@ -1,5 +1,9 @@
 package main.database.DAOs;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.springframework.stereotype.Component;
 
 import main.database.GenericDAO;
@@ -7,26 +11,6 @@ import main.models.Fornecedor;
 
 @Component
 public class FornecedorDAO extends GenericDAO<Fornecedor, Integer> {
-
-    public static java.util.List<Fornecedor> findAllStatic() {
-        return GenericDAO.findAllStatic(FornecedorDAO.class);
-    }
-
-    public static Fornecedor findByIdStatic(Integer id) {
-        return GenericDAO.findByIdStatic(FornecedorDAO.class, id);
-    }
-
-    public static Fornecedor insertStatic(Fornecedor fornecedor) {
-        return GenericDAO.insertStatic(FornecedorDAO.class, fornecedor);
-    }
-
-    public static boolean updateStatic(Fornecedor fornecedor) {
-        return GenericDAO.updateStatic(FornecedorDAO.class, fornecedor);
-    }
-
-    public static boolean deleteByIdStatic(Integer id) {
-        return GenericDAO.deleteByIdStatic(FornecedorDAO.class, id);
-    }
 
     @Override
     protected String getTabela() {
@@ -46,69 +30,61 @@ public class FornecedorDAO extends GenericDAO<Fornecedor, Integer> {
     @Override
     protected String getSqlInsert() {
         return """
-                INSERT INTO fornecedor (razao_social, nome_fantasia, cnpj, inscricao_estadual, telefone, email,
-                 logradouro, numero, complemento, bairro, cidade, uf, cep)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+                INSERT INTO fornecedor (razao_social, nome_fantasia, cnpj, telefone, e_mail, id_endereco, ativo, data_cadastro, data_atualizacao)
+                VALUES (?,?,?,?,?,?,?,?,?)
                 """;
     }
 
     @Override
-    protected void setParametrosInsert(java.sql.PreparedStatement stmt, Fornecedor f) throws java.sql.SQLException {
+    protected void setParametrosInsert(PreparedStatement stmt, Fornecedor f) throws SQLException {
         stmt.setString(1, f.getRazaoSocial());
         stmt.setString(2, f.getNomeFantasia());
         stmt.setString(3, f.getCnpj());
-        stmt.setString(4, null); // inscricao_estadual não disponível no model atual
-        stmt.setString(5, f.getTelefone());
-        stmt.setString(6, f.getEMail());
-        stmt.setString(7, null); // logradouro
-        stmt.setString(8, null); // numero
-        stmt.setString(9, null); // complemento
-        stmt.setString(10, null); // bairro
-        stmt.setString(11, null); // cidade
-        stmt.setString(12, null); // uf
-        stmt.setString(13, null); // cep
+        stmt.setString(4, f.getTelefone());
+        stmt.setString(5, f.getEMail());
+        stmt.setObject(6, f.getIdEndereco());
+        stmt.setBoolean(7, f.getAtivo() != null ? f.getAtivo() : false);
+        stmt.setObject(8, f.getDataCadastro());
+        stmt.setObject(9, f.getDataAtualizacao());
     }
 
     @Override
-    protected void setParametrosUpdate(java.sql.PreparedStatement stmt, Fornecedor f) throws java.sql.SQLException {
+    protected void setParametrosUpdate(PreparedStatement stmt, Fornecedor f) throws SQLException {
         stmt.setString(1, f.getRazaoSocial());
         stmt.setString(2, f.getNomeFantasia());
         stmt.setString(3, f.getCnpj());
-        stmt.setString(4, null); // inscricao_estadual
-        stmt.setString(5, f.getTelefone());
-        stmt.setString(6, f.getEMail());
-        stmt.setString(7, null); // logradouro
-        stmt.setString(8, null); // numero
-        stmt.setString(9, null); // complemento
-        stmt.setString(10, null); // bairro
-        stmt.setString(11, null); // cidade
-        stmt.setString(12, null); // uf
-        stmt.setString(13, null); // cep
-        stmt.setInt(14, f.getIdFornecedor()); // WHERE id_fornecedor = ?
+        stmt.setString(4, f.getTelefone());
+        stmt.setString(5, f.getEMail());
+        stmt.setObject(6, f.getIdEndereco());
+        stmt.setBoolean(7, f.getAtivo() != null ? f.getAtivo() : false);
+        stmt.setObject(8, f.getDataAtualizacao());
+        stmt.setInt(9, f.getIdFornecedor());
     }
 
     @Override
     protected String getSqlUpdate() {
         return """
-                UPDATE fornecedor SET razao_social = ?, nome_fantasia = ?, cnpj = ?, inscricao_estadual = ?,
-                    telefone = ?, email = ?, logradouro = ?, numero = ?, complemento = ?,
-                    bairro = ?, cidade = ?, uf = ?, cep = ?
+                UPDATE fornecedor SET razao_social = ?, nome_fantasia = ?, cnpj = ?, telefone = ?, e_mail = ?, id_endereco = ?, ativo = ?, data_atualizacao = ?
                 WHERE id_fornecedor = ?
                 """;
     }
 
     @Override
-    protected Fornecedor mapear(java.sql.ResultSet rs) throws java.sql.SQLException {
+    protected Fornecedor mapear(ResultSet rs) throws SQLException {
         Fornecedor f = new Fornecedor();
         f.setIdFornecedor(rs.getInt("id_fornecedor"));
         f.setRazaoSocial(rs.getString("razao_social"));
         f.setNomeFantasia(rs.getString("nome_fantasia"));
         f.setCnpj(rs.getString("cnpj"));
         f.setTelefone(rs.getString("telefone"));
-        f.setEMail(rs.getString("email"));
+        f.setEMail(rs.getString("e_mail"));
 
-        // Não temos campos de endereço no modelo Fornecedor atual, apenas idEndereco
         f.setIdEndereco(rs.getObject("id_endereco", Integer.class));
+        f.setAtivo(rs.getBoolean("ativo"));
+        java.sql.Timestamp tsCadastro = rs.getTimestamp("data_cadastro");
+        if (tsCadastro != null) f.setDataCadastro(tsCadastro.toLocalDateTime());
+        java.sql.Timestamp tsAtualizacao = rs.getTimestamp("data_atualizacao");
+        if (tsAtualizacao != null) f.setDataAtualizacao(tsAtualizacao.toLocalDateTime());
 
         return f;
     }

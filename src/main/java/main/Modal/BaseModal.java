@@ -12,6 +12,10 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import main.database.DAOs.CategoriaDAO;
+import main.database.DAOs.FornecedorDAO;
+import main.database.DAOs.ProdutoDAO;
+import main.database.DAOs.UnidadeMedidaDAO;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +32,19 @@ public abstract class BaseModal<T> {
     @FXML protected Label lblTotalRegistros;
     @FXML protected Label lblStatus;
 
-    public BaseModal(Stage owner, String title, String fxmlPath) {
+    protected ProdutoDAO produtoDAO;
+    protected CategoriaDAO categoriaDAO;
+    protected FornecedorDAO fornecedorDAO;
+    protected UnidadeMedidaDAO unidadeMedidaDAO;
+
+    public BaseModal(Stage owner, String title, String fxmlPath,
+                     ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
+                     FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO) {
+        this.produtoDAO = produtoDAO;
+        this.categoriaDAO = categoriaDAO;
+        this.fornecedorDAO = fornecedorDAO;
+        this.unidadeMedidaDAO = unidadeMedidaDAO;
+
         try {
             stage = new Stage();
             stage.initOwner(owner);

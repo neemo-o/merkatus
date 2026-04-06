@@ -3,27 +3,42 @@ package main.Modal;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
-import main.models.Categoria;
-import main.models.Fornecedor;
-import main.models.Produto;
-import main.models.UnidadeMedida;
 import main.database.DAOs.CategoriaDAO;
 import main.database.DAOs.FornecedorDAO;
 import main.database.DAOs.ProdutoDAO;
 import main.database.DAOs.UnidadeMedidaDAO;
+import main.models.Categoria;
+import main.models.Fornecedor;
+import main.models.Produto;
+import main.models.UnidadeMedida;
 
 import java.math.BigDecimal;
 
-
 public class ProdutoFormModal {
+
+    private final ProdutoDAO produtoDAO;
+    private final CategoriaDAO categoriaDAO;
+    private final FornecedorDAO fornecedorDAO;
+    private final UnidadeMedidaDAO unidadeMedidaDAO;
 
     private Stage stage;
     private Produto produto;
@@ -48,8 +63,14 @@ public class ProdutoFormModal {
     private TextField txtCstPis, txtCstCofins, txtCstIpi;
     private TextField txtAliqIcms, txtAliqPis, txtAliqCofins, txtAliqIpi;
 
-    public ProdutoFormModal(Stage owner, Produto produto) {
+    public ProdutoFormModal(Stage owner, Produto produto,
+                            ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
+                            FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO) {
         this.produto = produto;
+        this.produtoDAO = produtoDAO;
+        this.categoriaDAO = categoriaDAO;
+        this.fornecedorDAO = fornecedorDAO;
+        this.unidadeMedidaDAO = unidadeMedidaDAO;
 
         stage = new Stage();
         stage.initOwner(owner);
@@ -86,7 +107,7 @@ public class ProdutoFormModal {
         Region espaco = new Region();
         HBox.setHgrow(espaco, Priority.ALWAYS);
 
-        Button btnFechar = new Button("✕");
+        Button btnFechar = new Button("X");
         btnFechar.setStyle("-fx-background-color: transparent; -fx-text-fill: rgba(255,255,255,0.8); -fx-font-size: 12; -fx-cursor: hand; -fx-border-width: 0; -fx-padding: 0;");
         btnFechar.setOnAction(e -> stage.close());
 
@@ -96,7 +117,6 @@ public class ProdutoFormModal {
         // Drag
         topBar.setOnMousePressed(e -> { xOff = stage.getX() - e.getScreenX(); yOff = stage.getY() - e.getScreenY(); });
         topBar.setOnMouseDragged(e -> { stage.setX(e.getScreenX() + xOff); stage.setY(e.getScreenY() + yOff); });
-
 
         VBox root = new VBox(topBar, tabPane, rodape);
         stage.setScene(new Scene(root, 700, 500));
@@ -118,9 +138,22 @@ public class ProdutoFormModal {
         chkAtivo        = new CheckBox("Ativo");
         chkAtivo.setSelected(true);
 
-        cbUnidade.getItems().addAll(UnidadeMedidaDAO.findAllStatic());
-        cbCategoria.getItems().addAll(CategoriaDAO.findAllStatic());
-        cbFornecedor.getItems().addAll(FornecedorDAO.findAllStatic());
+        // Carrega combos com try/catch — em caso de erro, combo fica vazio, app não trava
+        try {
+            cbUnidade.getItems().addAll(unidadeMedidaDAO.findAll());
+        } catch (Exception e) {
+            exibirErroCarregamento("Unidade de Medida", e);
+        }
+        try {
+            cbCategoria.getItems().addAll(categoriaDAO.findAll());
+        } catch (Exception e) {
+            exibirErroCarregamento("Categoria", e);
+        }
+        try {
+            cbFornecedor.getItems().addAll(fornecedorDAO.findAll());
+        } catch (Exception e) {
+            exibirErroCarregamento("Fornecedor", e);
+        }
 
         txtDescricao.setPrefWidth(300);
 
@@ -132,6 +165,14 @@ public class ProdutoFormModal {
         grid.addRow(5, chkAtivo);
 
         return grid;
+    }
+
+    private void exibirErroCarregamento(String contexto, Exception e) {
+        Alert alerta = new Alert(Alert.AlertType.ERROR);
+        alerta.setHeaderText(null);
+        alerta.setContentText("Erro ao carregar " + contexto + ": " + e.getMessage());
+        alerta.initOwner(stage);
+        alerta.showAndWait();
     }
 
     private GridPane buildAbaPrecos() {
@@ -243,11 +284,11 @@ public class ProdutoFormModal {
     }
 
     private void preencherCampos() {
-        txtDescricao.setText(produto.getDescricao());
-        txtCodigoBarras.setText(produto.getCodigoBarras());
+        txtDescricao.setText(produto.getDescricao() != null ? produto.getDescricao() : "");
+        txtCodigoBarras.setText(produto.getCodigoBarras() != null ? produto.getCodigoBarras() : "");
         cbUnidade.setValue(findUnidadeMedida(produto.getUnidadeMedida()));
-        cbCategoria.setValue(CategoriaDAO.findByIdStatic(produto.getIdCategoria()));
-        cbFornecedor.setValue(FornecedorDAO.findByIdStatic(produto.getIdFornecedor()));
+        cbCategoria.setValue(categoriaDAO.findById(produto.getIdCategoria()).orElse(null));
+        cbFornecedor.setValue(fornecedorDAO.findById(produto.getIdFornecedor()).orElse(null));
         chkAtivo.setSelected(produto.isAtivo());
 
         txtPrecoCusto.setText(produto.getPrecoCusto() != null ? produto.getPrecoCusto().toString() : "");
@@ -262,18 +303,20 @@ public class ProdutoFormModal {
         txtEstoqueMaximo.setText(produto.getEstoqueMaximo() != null ? produto.getEstoqueMaximo().toString() : "");
         chkControlaEstoque.setSelected(produto.isControlaEstoque());
 
-        txtNcm.setText(produto.getNcm());
-        txtCest.setText(produto.getCest());
-        txtCfop.setText(produto.getCfopVenda());
-        txtCstIcms.setText(produto.getCstIcms());
-        txtCsosn.setText(produto.getCsosn());
-        txtCstPis.setText(produto.getCstPis());
-        txtCstCofins.setText(produto.getCstCofins());
-        txtCstIpi.setText(produto.getCstIpi());
+        txtNcm.setText(produto.getNcm() != null ? produto.getNcm() : "");
+        txtCest.setText(produto.getCest() != null ? produto.getCest() : "");
+        txtCfop.setText(produto.getCfopVenda() != null ? produto.getCfopVenda() : "");
+        txtCstIcms.setText(produto.getCstIcms() != null ? produto.getCstIcms() : "");
+        txtCsosn.setText(produto.getCsosn() != null ? produto.getCsosn() : "");
+        txtCstPis.setText(produto.getCstPis() != null ? produto.getCstPis() : "");
+        txtCstCofins.setText(produto.getCstCofins() != null ? produto.getCstCofins() : "");
+        txtCstIpi.setText(produto.getCstIpi() != null ? produto.getCstIpi() : "");
         txtAliqIcms.setText(produto.getAliqIcms() != null ? produto.getAliqIcms().toString() : "");
         txtAliqPis.setText(produto.getAliqPis() != null ? produto.getAliqPis().toString() : "");
         txtAliqCofins.setText(produto.getAliqCofins() != null ? produto.getAliqCofins().toString() : "");
         txtAliqIpi.setText(produto.getAliqIpi() != null ? produto.getAliqIpi().toString() : "");
+
+        calcularMargem();
     }
 
     private UnidadeMedida findUnidadeMedida(String sigla) {
@@ -287,12 +330,32 @@ public class ProdutoFormModal {
     }
 
     private void salvar() {
+        // Validação de campos obrigatórios
+        String descricao = txtDescricao.getText().trim();
+        if (descricao.isEmpty()) {
+            Alert alerta = new Alert(Alert.AlertType.WARNING);
+            alerta.setHeaderText(null);
+            alerta.setContentText("A descrição do produto é obrigatória.");
+            alerta.initOwner(stage);
+            alerta.showAndWait();
+            return;
+        }
+
+        if (cbUnidade.getValue() == null) {
+            Alert alerta = new Alert(Alert.AlertType.WARNING);
+            alerta.setHeaderText(null);
+            alerta.setContentText("Selecione uma unidade de medida.");
+            alerta.initOwner(stage);
+            alerta.showAndWait();
+            return;
+        }
+
         if (produto == null) produto = new Produto();
 
-        produto.setDescricao(txtDescricao.getText());
-        produto.setCodigoBarras(txtCodigoBarras.getText());
-        produto.setUnidadeMedida(cbUnidade.getValue() != null ? cbUnidade.getValue().getSigla() : null);
-        produto.setIdUnidadeMedida(cbUnidade.getValue() != null ? cbUnidade.getValue().getIdUnidade() : null);
+        produto.setDescricao(descricao);
+        produto.setCodigoBarras(txtCodigoBarras.getText().trim());
+        produto.setUnidadeMedida(cbUnidade.getValue().getSigla());
+        produto.setIdUnidadeMedida(cbUnidade.getValue().getIdUnidade());
         produto.setIdCategoria(cbCategoria.getValue() != null ? cbCategoria.getValue().getIdCategoria() : null);
         produto.setIdFornecedor(cbFornecedor.getValue() != null ? cbFornecedor.getValue().getIdFornecedor() : null);
         produto.setAtivo(chkAtivo.isSelected());
@@ -309,41 +372,63 @@ public class ProdutoFormModal {
         produto.setEstoqueMaximo(parseBigDecimal(txtEstoqueMaximo.getText()));
         produto.setControlaEstoque(chkControlaEstoque.isSelected());
 
-        produto.setNcm(txtNcm.getText());
-        produto.setCest(txtCest.getText());
-        produto.setCfopVenda(txtCfop.getText());
-        produto.setCstIcms(txtCstIcms.getText());
-        produto.setCsosn(txtCsosn.getText());
-        produto.setCstPis(txtCstPis.getText());
-        produto.setCstCofins(txtCstCofins.getText());
-        produto.setCstIpi(txtCstIpi.getText());
+        produto.setNcm(txtNcm.getText().trim());
+        produto.setCest(txtCest.getText().trim());
+        produto.setCfopVenda(txtCfop.getText().trim());
+        produto.setCstIcms(txtCstIcms.getText().trim());
+        produto.setCsosn(txtCsosn.getText().trim());
+        produto.setCstPis(txtCstPis.getText().trim());
+        produto.setCstCofins(txtCstCofins.getText().trim());
+        produto.setCstIpi(txtCstIpi.getText().trim());
         produto.setAliqIcms(parseBigDecimal(txtAliqIcms.getText()));
         produto.setAliqPis(parseBigDecimal(txtAliqPis.getText()));
         produto.setAliqCofins(parseBigDecimal(txtAliqCofins.getText()));
         produto.setAliqIpi(parseBigDecimal(txtAliqIpi.getText()));
 
-        if (produto.getIdProduto() == null) {
-            ProdutoDAO.insertStatic(produto);
-        } else {
-            ProdutoDAO.updateStatic(produto);
+        try {
+            if (produto.getIdProduto() == null) {
+                produtoDAO.save(produto);
+            } else {
+                produtoDAO.update(produto);
+            }
+            Alert info = new Alert(Alert.AlertType.INFORMATION);
+            info.setHeaderText(null);
+            info.setContentText("Produto salvo com sucesso!");
+            info.initOwner(stage);
+            info.showAndWait();
+            stage.close();
+        } catch (Exception e) {
+            Alert erro = new Alert(Alert.AlertType.ERROR);
+            erro.setHeaderText(null);
+            erro.setContentText("Erro ao salvar o produto: " + e.getMessage());
+            erro.initOwner(stage);
+            erro.showAndWait();
         }
-
-        stage.close();
     }
 
     private BigDecimal parseBigDecimal(String value) {
+        if (value == null) return null;
+
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) return null;
+
         try {
-            return new BigDecimal(value.replace(",", "."));
+            return new BigDecimal(trimmed.replace(",", "."));
         } catch (NumberFormatException e) {
-            return BigDecimal.ZERO;
+            return null;
         }
     }
 
     private Integer parseInteger(String value) {
+        if (value == null) return null;
+
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) return null;
+
         try {
-            return Integer.parseInt(value.trim());
+            return Integer.parseInt(trimmed);
         } catch (NumberFormatException e) {
-            return 0;
+            return null;
         }
     }
 
@@ -351,3 +436,4 @@ public class ProdutoFormModal {
         stage.showAndWait();
     }
 }
+

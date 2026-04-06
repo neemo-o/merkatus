@@ -12,26 +12,6 @@ import main.models.UnidadeMedida;
 @Component
 public class UnidadeMedidaDAO extends GenericDAO<UnidadeMedida, Integer> {
 
-    public static java.util.List<UnidadeMedida> findAllStatic() {
-        return GenericDAO.findAllStatic(UnidadeMedidaDAO.class);
-    }
-
-    public static UnidadeMedida findByIdStatic(Integer id) {
-        return GenericDAO.findByIdStatic(UnidadeMedidaDAO.class, id);
-    }
-
-    public static boolean deleteByIdStatic(Integer id) {
-        return GenericDAO.deleteByIdStatic(UnidadeMedidaDAO.class, id);
-    }
-
-    public static UnidadeMedida insertStatic(UnidadeMedida unidadeMedida) {
-        return GenericDAO.insertStatic(UnidadeMedidaDAO.class, unidadeMedida);
-    }
-
-    public static boolean updateStatic(UnidadeMedida unidadeMedida) {
-        return GenericDAO.updateStatic(UnidadeMedidaDAO.class, unidadeMedida);
-    }
-
     @Override
     protected String getTabela() {
         return "unidades_medida";

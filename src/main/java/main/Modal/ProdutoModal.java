@@ -25,6 +25,7 @@ import javafx.stage.StageStyle;
 import main.database.DAOs.CategoriaDAO;
 import main.database.DAOs.FornecedorDAO;
 import main.database.DAOs.ProdutoDAO;
+import main.database.DAOs.UnidadeMedidaDAO;
 import main.models.Categoria;
 import main.models.Fornecedor;
 import main.models.Produto;
@@ -37,10 +38,12 @@ public class ProdutoModal extends BaseModal<Produto> {
     @FXML private CheckBox chkControlaEstoque;
     @FXML private Button btnEditar;
     @FXML private Button btnExcluir;
-    
 
-    public ProdutoModal(Stage owner) {
-        super(owner, "Produtos", "/main/view/ProdutoModal.fxml");
+
+    public ProdutoModal(Stage owner,
+                       ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
+                       FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO) {
+        super(owner, "Produtos", "/main/view/ProdutoModal.fxml", produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO);
     }
 
     @Override
@@ -48,11 +51,11 @@ public class ProdutoModal extends BaseModal<Produto> {
     public void initialize() {
         // Carrega os combos de filtro
         cbCategoria.getItems().add(null);
-        cbCategoria.getItems().addAll(CategoriaDAO.findAllStatic());
+        cbCategoria.getItems().addAll(categoriaDAO.findAll());
         cbCategoria.setOnAction(e -> applyFilters());
 
         cbFornecedor.getItems().add(null);
-        cbFornecedor.getItems().addAll(FornecedorDAO.findAllStatic());
+        cbFornecedor.getItems().addAll(fornecedorDAO.findAll());
         cbFornecedor.setOnAction(e -> applyFilters());
 
         chkAtivo.setOnAction(e -> applyFilters());
@@ -73,7 +76,7 @@ public class ProdutoModal extends BaseModal<Produto> {
 
     @Override
     protected List<Produto> fetchFromDatabase() {
-        return ProdutoDAO.findAllStatic();
+        return produtoDAO.findAll();
     }
 
     @Override
@@ -107,7 +110,17 @@ public class ProdutoModal extends BaseModal<Produto> {
         colEstoque.setPrefWidth(90);
 
         TableColumn<Produto, String> colFornecedor = new TableColumn<>("Fornecedor");
-        colFornecedor.setCellValueFactory(new PropertyValueFactory<>("nomeFornecedor"));
+        colFornecedor.setCellValueFactory(cellData -> {
+            Integer id = cellData.getValue().getIdFornecedor();
+            if (id != null) {
+                var f = fornecedorDAO.findById(id).orElse(null);
+                if (f != null) {
+                    String nome = f.getNomeFantasia() != null ? f.getNomeFantasia() : f.getRazaoSocial();
+                    return new javafx.beans.property.SimpleStringProperty(nome);
+                }
+            }
+            return new javafx.beans.property.SimpleStringProperty("");
+        });
         colFornecedor.setPrefWidth(180);
 
         TableColumn<Produto, Boolean> colAtivo = new TableColumn<>("Ativo");
@@ -155,7 +168,8 @@ public class ProdutoModal extends BaseModal<Produto> {
     @Override
     @FXML
     protected void abrirFormNovo() {
-        ProdutoFormModal form = new ProdutoFormModal(stage, null);
+        ProdutoFormModal form = new ProdutoFormModal(stage, null,
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO);
         form.show();
         loadData();
     }
@@ -168,7 +182,8 @@ public class ProdutoModal extends BaseModal<Produto> {
             exibirAlerta("Selecione um produto para editar.");
             return;
         }
-        ProdutoFormModal form = new ProdutoFormModal(stage, selected);
+        ProdutoFormModal form = new ProdutoFormModal(stage, selected,
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO);
         form.show();
         loadData();
     }
@@ -186,7 +201,7 @@ public class ProdutoModal extends BaseModal<Produto> {
             return;
         }
 
-        ProdutoDAO.deleteByIdStatic(selected.getIdProduto());
+        produtoDAO.deleteById(selected.getIdProduto());
         loadData();
     }
 

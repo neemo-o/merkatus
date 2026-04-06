@@ -19,14 +19,6 @@ public class CategoriaDAO extends GenericDAO<Categoria, Integer> {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public static java.util.List<Categoria> findAllStatic() {
-        return GenericDAO.findAllStatic(CategoriaDAO.class);
-    }
-
-    public static Categoria findByIdStatic(Integer id) {
-        return GenericDAO.findByIdStatic(CategoriaDAO.class, id);
-    }
-
     @Override
     protected String getTabela() { return "categorias"; }
 

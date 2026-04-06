@@ -41,7 +41,7 @@ public class NcmTributacaoDAO extends GenericDAO<NcmTributacao, Integer> {
         n.setIdNcmTributacao(rs.getInt("id_ncm_tributacao"));
         n.setNcm(rs.getString("ncm"));
         n.setDescricaoNcm(rs.getString("descricao_ncm"));
-        n.setIdTributacao(rs.getInt("id_tributacao"));
+        n.setIdTributacao(rs.getObject("id_tributacao", Integer.class));
         java.sql.Timestamp cadastro = rs.getTimestamp("data_cadastro");
         if (cadastro != null) n.setDataCadastro(cadastro.toLocalDateTime());
         return n;
@@ -49,7 +49,7 @@ public class NcmTributacaoDAO extends GenericDAO<NcmTributacao, Integer> {
 
     @Override
     protected String getSqlInsert() {
-        return "INSERT INTO ncm_tributacao (ncm, descricao_ncm, id_tributacao) VALUES (?, ?, ?)";
+        return "INSERT INTO ncm_tributacao (ncm, descricao_ncm, id_tributacao, data_cadastro) VALUES (?, ?, ?, ?)";
     }
 
     @Override
@@ -61,14 +61,15 @@ public class NcmTributacaoDAO extends GenericDAO<NcmTributacao, Integer> {
     protected void setParametrosInsert(PreparedStatement stmt, NcmTributacao n) throws SQLException {
         stmt.setString(1, n.getNcm());
         stmt.setString(2, n.getDescricaoNcm());
-        stmt.setInt(3, n.getIdTributacao());
+        stmt.setObject(3, n.getIdTributacao());
+        stmt.setObject(4, n.getDataCadastro());
     }
 
     @Override
     protected void setParametrosUpdate(PreparedStatement stmt, NcmTributacao n) throws SQLException {
         stmt.setString(1, n.getNcm());
         stmt.setString(2, n.getDescricaoNcm());
-        stmt.setInt(3, n.getIdTributacao());
+        stmt.setObject(3, n.getIdTributacao());
         stmt.setInt(4, n.getIdNcmTributacao());
     }
 }

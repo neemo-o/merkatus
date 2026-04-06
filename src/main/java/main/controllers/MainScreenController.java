@@ -28,6 +28,10 @@ import javafx.util.Duration;
 import main.Modal.ModalManager;
 import main.Modal.ModalType;
 import main.models.Usuario;
+import main.database.DAOs.CategoriaDAO;
+import main.database.DAOs.FornecedorDAO;
+import main.database.DAOs.ProdutoDAO;
+import main.database.DAOs.UnidadeMedidaDAO;
 import main.util.FXMLLoaderFactory;
 import main.util.SessionManager;
 
@@ -38,11 +42,24 @@ public class MainScreenController {
 
     private final FXMLLoaderFactory loaderFactory;
 
+    private final ProdutoDAO produtoDAO;
+    private final CategoriaDAO categoriaDAO;
+    private final FornecedorDAO fornecedorDAO;
+    private final UnidadeMedidaDAO unidadeMedidaDAO;
+
     public MainScreenController(
             @Qualifier("oficialDataSource") DataSource oficialDataSource,
-            FXMLLoaderFactory loaderFactory) {
+            FXMLLoaderFactory loaderFactory,
+            ProdutoDAO produtoDAO,
+            CategoriaDAO categoriaDAO,
+            FornecedorDAO fornecedorDAO,
+            UnidadeMedidaDAO unidadeMedidaDAO) {
         this.oficialJdbc = new JdbcTemplate(oficialDataSource);
         this.loaderFactory = loaderFactory;
+        this.produtoDAO = produtoDAO;
+        this.categoriaDAO = categoriaDAO;
+        this.fornecedorDAO = fornecedorDAO;
+        this.unidadeMedidaDAO = unidadeMedidaDAO;
     }
 
     @FXML
@@ -102,7 +119,7 @@ public class MainScreenController {
 
         Usuario usuario = SessionManager.getUsuarioAtual();
         if (usuario != null) {
-            usuarioLabel.setText(usuario.getNome());
+            usuarioLabel.setText(usuario.getNomeExibicao());
         }
 
         Timeline clock = new Timeline(
@@ -206,7 +223,8 @@ public class MainScreenController {
     @FXML
     private void handleProdutos() {
         setActiveButton(btnProdutos);
-        ModalManager.open(ModalType.PRODUTO, (Stage) contentArea.getScene().getWindow());
+        ModalManager.open(ModalType.PRODUTO, (Stage) contentArea.getScene().getWindow(),
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO);
     }
 
     @FXML

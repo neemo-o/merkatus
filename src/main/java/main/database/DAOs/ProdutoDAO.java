@@ -12,26 +12,6 @@ import main.models.Produto;
 @Component
 public class ProdutoDAO extends GenericDAO<Produto, Integer> {
 
-    public static java.util.List<Produto> findAllStatic() {
-        return GenericDAO.findAllStatic(ProdutoDAO.class);
-    }
-
-    public static Produto findByIdStatic(Integer id) {
-        return GenericDAO.findByIdStatic(ProdutoDAO.class, id);
-    }
-
-    public static boolean deleteByIdStatic(Integer id) {
-        return GenericDAO.deleteByIdStatic(ProdutoDAO.class, id);
-    }
-
-    public static Produto insertStatic(Produto produto) {
-        return GenericDAO.insertStatic(ProdutoDAO.class, produto);
-    }
-
-    public static boolean updateStatic(Produto produto) {
-        return GenericDAO.updateStatic(ProdutoDAO.class, produto);
-    }
-
     @Override
     protected String getTabela() {
         return "produto";
@@ -54,50 +34,85 @@ public class ProdutoDAO extends GenericDAO<Produto, Integer> {
                 (descricao, codigo_barras, unidade_medida, id_unidade_medida,
                  id_categoria, preco_custo, preco_venda, margem_lucro,
                  estoque_atual, estoque_minimo, estoque_maximo, id_fornecedor,
-                 permite_fracionamento, controla_estoque, balanca, ativo)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 ncm, cest, cfop_venda, cst_icms, csosn, cst_pis, cst_cofins, cst_ipi,
+                 aliq_icms, aliq_pis, aliq_cofins, aliq_ipi,
+                 id_tributacao, peso_liquido, peso_bruto,
+                 permite_fracionamento, controla_estoque, balanca, ativo, data_cadastro)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
     }
 
     @Override
     protected void setParametrosInsert(PreparedStatement stmt, Produto p) throws SQLException {
-        stmt.setString(1, p.getDescricao()); // descricao — NOT NULL
-        stmt.setString(2, p.getCodigoBarras()); // codigo_barras — pode ser null, mas setString aceita null
-        stmt.setString(3, p.getUnidadeMedida()); // unidade_medida
-        stmt.setObject(4, p.getIdUnidadeMedida()); // id_unidade_medida — Integer nullable, usa setObject
-        stmt.setObject(5, p.getIdCategoria()); // id_categoria — Integer nullable
+        stmt.setString(1, p.getDescricao());
+        stmt.setString(2, p.getCodigoBarras());
+        stmt.setString(3, p.getUnidadeMedida());
+        stmt.setObject(4, p.getIdUnidadeMedida());
+        stmt.setObject(5, p.getIdCategoria());
         stmt.setObject(6, p.getPrecoCusto());
         stmt.setObject(7, p.getPrecoVenda());
         stmt.setObject(8, p.getMargemLucro());
-        stmt.setInt(9, p.getEstoqueAtual()); // INTEGER NOT NULL DEFAULT 0 — setInt
-        stmt.setObject(10, p.getEstoqueMinimo()); // DECIMAL nullable — setObject ok
-        stmt.setObject(11, p.getEstoqueMaximo()); // DECIMAL nullable — setObject ok
-        stmt.setObject(12, p.getIdFornecedor()); // INTEGER nullable — setObject ok
-        stmt.setBoolean(13, p.isPermiteFracionamento()); // BOOLEAN NOT NULL — setBoolean
-        stmt.setBoolean(14, p.isControlaEstoque()); // BOOLEAN NOT NULL — setBoolean
-        stmt.setBoolean(15, p.isBalanca()); // BOOLEAN NOT NULL — setBoolean
-        stmt.setBoolean(16, p.isAtivo());
+        stmt.setInt(9, p.getEstoqueAtual());
+        stmt.setObject(10, p.getEstoqueMinimo());
+        stmt.setObject(11, p.getEstoqueMaximo());
+        stmt.setObject(12, p.getIdFornecedor());
+        stmt.setString(13, p.getNcm());
+        stmt.setString(14, p.getCest());
+        stmt.setString(15, p.getCfopVenda());
+        stmt.setString(16, p.getCstIcms());
+        stmt.setString(17, p.getCsosn());
+        stmt.setString(18, p.getCstPis());
+        stmt.setString(19, p.getCstCofins());
+        stmt.setString(20, p.getCstIpi());
+        stmt.setObject(21, p.getAliqIcms());
+        stmt.setObject(22, p.getAliqPis());
+        stmt.setObject(23, p.getAliqCofins());
+        stmt.setObject(24, p.getAliqIpi());
+        stmt.setObject(25, p.getIdTributacao());
+        stmt.setObject(26, p.getPesoLiquido());
+        stmt.setObject(27, p.getPesoBruto());
+        stmt.setBoolean(28, p.isPermiteFracionamento());
+        stmt.setBoolean(29, p.isControlaEstoque());
+        stmt.setBoolean(30, p.isBalanca());
+        stmt.setBoolean(31, p.isAtivo());
+        stmt.setObject(32, p.getDataCadastro());
     }
 
     @Override
     protected void setParametrosUpdate(PreparedStatement stmt, Produto p) throws SQLException {
-        stmt.setString(1, p.getDescricao()); // descricao — NOT NULL
-        stmt.setString(2, p.getCodigoBarras()); // codigo_barras — pode ser null, mas setString aceita null
-        stmt.setString(3, p.getUnidadeMedida()); // unidade_medida
-        stmt.setObject(4, p.getIdUnidadeMedida()); // id_unidade_medida — Integer nullable, usa setObject
-        stmt.setObject(5, p.getIdCategoria()); // id_categoria — Integer nullable
+        stmt.setString(1, p.getDescricao());
+        stmt.setString(2, p.getCodigoBarras());
+        stmt.setString(3, p.getUnidadeMedida());
+        stmt.setObject(4, p.getIdUnidadeMedida());
+        stmt.setObject(5, p.getIdCategoria());
         stmt.setObject(6, p.getPrecoCusto());
         stmt.setObject(7, p.getPrecoVenda());
         stmt.setObject(8, p.getMargemLucro());
-        stmt.setInt(9, p.getEstoqueAtual()); // INTEGER NOT NULL DEFAULT 0 — setInt
-        stmt.setObject(10, p.getEstoqueMinimo()); // DECIMAL nullable — setObject ok
-        stmt.setObject(11, p.getEstoqueMaximo()); // DECIMAL nullable — setObject ok
-        stmt.setObject(12, p.getIdFornecedor()); // INTEGER nullable — setObject ok
-        stmt.setBoolean(13, p.isPermiteFracionamento()); // BOOLEAN NOT NULL — setBoolean
-        stmt.setBoolean(14, p.isControlaEstoque()); // BOOLEAN NOT NULL — setBoolean
-        stmt.setBoolean(15, p.isBalanca()); // BOOLEAN NOT NULL — setBoolean
-        stmt.setBoolean(16, p.isAtivo());
-        stmt.setInt(17, p.getIdProduto()); // WHERE
+        stmt.setInt(9, p.getEstoqueAtual());
+        stmt.setObject(10, p.getEstoqueMinimo());
+        stmt.setObject(11, p.getEstoqueMaximo());
+        stmt.setObject(12, p.getIdFornecedor());
+        stmt.setString(13, p.getNcm());
+        stmt.setString(14, p.getCest());
+        stmt.setString(15, p.getCfopVenda());
+        stmt.setString(16, p.getCstIcms());
+        stmt.setString(17, p.getCsosn());
+        stmt.setString(18, p.getCstPis());
+        stmt.setString(19, p.getCstCofins());
+        stmt.setString(20, p.getCstIpi());
+        stmt.setObject(21, p.getAliqIcms());
+        stmt.setObject(22, p.getAliqPis());
+        stmt.setObject(23, p.getAliqCofins());
+        stmt.setObject(24, p.getAliqIpi());
+        stmt.setObject(25, p.getIdTributacao());
+        stmt.setObject(26, p.getPesoLiquido());
+        stmt.setObject(27, p.getPesoBruto());
+        stmt.setBoolean(28, p.isPermiteFracionamento());
+        stmt.setBoolean(29, p.isControlaEstoque());
+        stmt.setBoolean(30, p.isBalanca());
+        stmt.setBoolean(31, p.isAtivo());
+        stmt.setObject(32, p.getDataAtualizacao());
+        stmt.setInt(33, p.getIdProduto());
     }
 
     @Override
@@ -116,10 +131,26 @@ public class ProdutoDAO extends GenericDAO<Produto, Integer> {
                     estoque_minimo = ?,
                     estoque_maximo = ?,
                     id_fornecedor = ?,
+                    ncm = ?,
+                    cest = ?,
+                    cfop_venda = ?,
+                    cst_icms = ?,
+                    csosn = ?,
+                    cst_pis = ?,
+                    cst_cofins = ?,
+                    cst_ipi = ?,
+                    aliq_icms = ?,
+                    aliq_pis = ?,
+                    aliq_cofins = ?,
+                    aliq_ipi = ?,
+                    id_tributacao = ?,
+                    peso_liquido = ?,
+                    peso_bruto = ?,
                     permite_fracionamento = ?,
                     controla_estoque = ?,
                     balanca = ?,
-                    ativo = ?
+                    ativo = ?,
+                    data_atualizacao = ?
                 WHERE id_produto = ?
                     """;
     }
@@ -144,6 +175,25 @@ public class ProdutoDAO extends GenericDAO<Produto, Integer> {
         p.setControlaEstoque(rs.getBoolean("controla_estoque"));
         p.setBalanca(rs.getBoolean("balanca"));
         p.setAtivo(rs.getBoolean("ativo"));
+        p.setNcm(rs.getString("ncm"));
+        p.setCest(rs.getString("cest"));
+        p.setCfopVenda(rs.getString("cfop_venda"));
+        p.setCstIcms(rs.getString("cst_icms"));
+        p.setCsosn(rs.getString("csosn"));
+        p.setCstPis(rs.getString("cst_pis"));
+        p.setCstCofins(rs.getString("cst_cofins"));
+        p.setCstIpi(rs.getString("cst_ipi"));
+        p.setAliqIcms(rs.getBigDecimal("aliq_icms"));
+        p.setAliqPis(rs.getBigDecimal("aliq_pis"));
+        p.setAliqCofins(rs.getBigDecimal("aliq_cofins"));
+        p.setAliqIpi(rs.getBigDecimal("aliq_ipi"));
+        p.setIdTributacao(rs.getObject("id_tributacao", Integer.class));
+        p.setPesoLiquido(rs.getBigDecimal("peso_liquido"));
+        p.setPesoBruto(rs.getBigDecimal("peso_bruto"));
+        java.sql.Timestamp tsCadastro = rs.getTimestamp("data_cadastro");
+        if (tsCadastro != null) p.setDataCadastro(tsCadastro.toLocalDateTime());
+        java.sql.Timestamp tsAtualizacao = rs.getTimestamp("data_atualizacao");
+        if (tsAtualizacao != null) p.setDataAtualizacao(tsAtualizacao.toLocalDateTime());
         return p;
     }
 }
