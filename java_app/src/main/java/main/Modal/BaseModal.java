@@ -44,6 +44,7 @@ public abstract class BaseModal<T> {
         this.categoriaDAO = categoriaDAO;
         this.fornecedorDAO = fornecedorDAO;
         this.unidadeMedidaDAO = unidadeMedidaDAO;
+        
 
         try {
             stage = new Stage();
@@ -133,13 +134,6 @@ public abstract class BaseModal<T> {
         stage.close();
     }
 
-    @FXML protected void confirmar() {
-        stage.close();
-    }
-
-    @FXML protected void cancelar() {
-        stage.close();
-    }
 
     @FXML
     protected void minimizar() {

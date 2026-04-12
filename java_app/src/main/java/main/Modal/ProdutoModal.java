@@ -35,7 +35,6 @@ public class ProdutoModal extends BaseModal<Produto> {
     @FXML private ComboBox<Categoria> cbCategoria;
     @FXML private ComboBox<Fornecedor> cbFornecedor;
     @FXML private CheckBox chkAtivo;
-    @FXML private CheckBox chkControlaEstoque;
     @FXML private Button btnEditar;
     @FXML private Button btnExcluir;
 
@@ -59,7 +58,6 @@ public class ProdutoModal extends BaseModal<Produto> {
         cbFornecedor.setOnAction(e -> applyFilters());
 
         chkAtivo.setOnAction(e -> applyFilters());
-        chkControlaEstoque.setOnAction(e -> applyFilters());
 
         btnEditar.setDisable(true);
         btnExcluir.setDisable(true);
@@ -152,9 +150,7 @@ public class ProdutoModal extends BaseModal<Produto> {
                 && p.getIdFornecedor().equals(cbFornecedor.getValue().getIdFornecedor()));
 
         boolean ativoOk      = !chkAtivo.isSelected()          || p.isAtivo();
-        boolean estoqueOk    = !chkControlaEstoque.isSelected() || p.isControlaEstoque();
-
-        return categoriaOk && fornecedorOk && ativoOk && estoqueOk;
+        return categoriaOk && fornecedorOk && ativoOk;
     }
 
     @Override
@@ -162,7 +158,6 @@ public class ProdutoModal extends BaseModal<Produto> {
         cbCategoria.setValue(null);
         cbFornecedor.setValue(null);
         chkAtivo.setSelected(false);
-        chkControlaEstoque.setSelected(false);
     }
 
     @Override

@@ -13,6 +13,7 @@ public class ModalManager {
                            FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO) {
         BaseModal<?> modal = switch (type) {
             case PRODUTO -> new ProdutoModal(owner, produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO);
+            case FORNECEDOR -> new FornecedorModal(owner, fornecedorDAO);
         };
         modal.show();
     }
