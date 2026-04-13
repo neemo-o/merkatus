@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function LoginPage() {
   const [user, setUser] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const { theme } = useTheme()
+  const { login } = useAuth()
+  const navigate = useNavigate()
   const logoSrc = theme === 'dark' ? '/logo_white.png' : '/logo.png'
 
   useEffect(() => {
@@ -14,13 +18,30 @@ export default function LoginPage() {
     return () => { document.body.style.backgroundColor = '' }
   }, [])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    setError('')
     setLoading(true)
-    const timer = setTimeout(() => {
+
+    try {
+      console.log('Tentando login...', { user })
+      const result = await login(user, password)
+      console.log('Resultado do login:', result)
+
+      if (result.success) {
+        // Login bem-sucedido - redireciona para dashboard
+        console.log('Login OK, redirecionando para dashboard...')
+        window.location.href = '/dashboard'
+      } else {
+        // Erro de autenticação
+        setError(result.error || 'Credenciais inválidas')
+      }
+    } catch (err) {
+      console.error('Erro no login:', err)
+      setError(err.message || 'Erro ao conectar com o servidor. Tente novamente.')
+    } finally {
       setLoading(false)
-    }, 1500)
-    return () => clearTimeout(timer)
+    }
   }
 
   const inputCls = "w-full px-4 py-3 rounded-xl text-sm bg-theme-surface text-theme-text border border-theme-border transition-all focus:outline-none focus:ring-2 focus:border-theme-accent"
@@ -53,6 +74,12 @@ export default function LoginPage() {
           <h1 className="text-2xl font-heading font-bold text-theme-text">Merkatus</h1>
           <p className="mt-2 text-sm text-theme-muted font-mono">Acesso ao sistema</p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

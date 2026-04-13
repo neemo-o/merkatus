@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { verificarLicenca } from '../services/licencaService'
 
 const VERSION = '0.1'
 
@@ -17,29 +18,56 @@ export default function Download() {
   const [cnpj, setCNPJ] = useState('')
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
+  const [licencaInfo, setLicencaInfo] = useState(null)
 
   const handleCNPJChange = (e) => {
     const formatted = formatCNPJ(e.target.value)
     setCNPJ(formatted)
     setError('')
     setStatus('idle')
+    setLicencaInfo(null)
   }
 
-  const validate = () => {
+  const validate = async () => {
+    // Validação básica do CNPJ
+    const cnpjLimpo = cnpj.replace(/\D/g, '')
+
     if (!cnpj.trim()) {
       setError('Insira o CNPJ da licença.')
       return
     }
-    if (cnpj.replace(/\D/g, '').length < 14) {
+    if (cnpjLimpo.length < 14) {
       setError('CNPJ incompleto.')
       return
     }
+
     setError('')
     setStatus('validating')
-    const timer = setTimeout(() => {
-      setStatus('ready')
-    }, 1200)
-    return () => clearTimeout(timer)
+    setLicencaInfo(null)
+
+    try {
+      console.log('Verificando licença para CNPJ:', cnpj)
+      // Chama o backend para verificar a licença
+      const resultado = await verificarLicenca(cnpj)
+      console.log('Resultado:', resultado)
+
+      if (resultado.podeOperar) {
+        setStatus('ready')
+        setLicencaInfo(resultado.licenca)
+      } else {
+        setStatus('error')
+        setError(resultado.mensagem || 'CNPJ não possui licença válida')
+      }
+    } catch (err) {
+      console.error('Erro ao verificar licença:', err)
+      setStatus('error')
+      setError(err.message || 'Erro ao verificar licença. Verifique se o servidor está online.')
+    }
+  }
+
+  const handleDownload = () => {
+    // Implementação futura: download do instalador
+    alert('Download iniciado! Versão ' + VERSION)
   }
 
   return (
@@ -76,18 +104,23 @@ export default function Download() {
                 {error && (
                   <p className="mt-2 text-xs" style={{ color: '#ef4444' }}>{error}</p>
                 )}
-                {status === 'ready' && (
-                  <p className="mt-2 text-xs flex items-center gap-1" style={{ color: '#22c55e' }}>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Licença válida
-                  </p>
+                {status === 'ready' && licencaInfo && (
+                  <div className="mt-3 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+                    <p className="text-xs flex items-center gap-1" style={{ color: '#22c55e' }}>
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Licença válida até {new Date(licencaInfo.data_validade).toLocaleDateString('pt-BR')}
+                    </p>
+                    <p className="text-xs text-theme-muted mt-1">
+                      Status: <span className="text-green-400">{licencaInfo.status}</span>
+                    </p>
+                  </div>
                 )}
               </div>
 
               <button
-                onClick={validate}
+                onClick={status === 'ready' ? handleDownload : validate}
                 disabled={status === 'validating'}
                 className="w-full btn-primary"
               >
