@@ -16,6 +16,7 @@ import main.database.DAOs.CategoriaDAO;
 import main.database.DAOs.FornecedorDAO;
 import main.database.DAOs.ProdutoDAO;
 import main.database.DAOs.UnidadeMedidaDAO;
+import main.database.DAOs.EnderecoDAO;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,14 +37,28 @@ public abstract class BaseModal<T> {
     protected CategoriaDAO categoriaDAO;
     protected FornecedorDAO fornecedorDAO;
     protected UnidadeMedidaDAO unidadeMedidaDAO;
+    protected EnderecoDAO enderecoDAO;
+
+    public BaseModal(Stage owner, String title, String fxmlPath,
+                    ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
+                    FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO) {
+        this(owner, title, fxmlPath, produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, null);
+    }
+
+    public BaseModal(Stage owner, String title, String fxmlPath,
+                    FornecedorDAO fornecedorDAO, EnderecoDAO enderecoDAO) {
+        this(owner, title, fxmlPath, null, null, fornecedorDAO, null, enderecoDAO);
+    }
 
     public BaseModal(Stage owner, String title, String fxmlPath,
                      ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
-                     FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO) {
+                     FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO, EnderecoDAO enderecoDAO) {
         this.produtoDAO = produtoDAO;
         this.categoriaDAO = categoriaDAO;
         this.fornecedorDAO = fornecedorDAO;
         this.unidadeMedidaDAO = unidadeMedidaDAO;
+        this.enderecoDAO = enderecoDAO;
+        
 
         try {
             stage = new Stage();
@@ -133,13 +148,6 @@ public abstract class BaseModal<T> {
         stage.close();
     }
 
-    @FXML protected void confirmar() {
-        stage.close();
-    }
-
-    @FXML protected void cancelar() {
-        stage.close();
-    }
 
     @FXML
     protected void minimizar() {

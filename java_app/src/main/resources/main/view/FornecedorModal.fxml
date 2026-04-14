@@ -3,7 +3,6 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
@@ -24,15 +23,9 @@
             <HBox alignment="CENTER_LEFT" spacing="8" style="-fx-background-color: #f5f5f5;                          -fx-border-color: #d8d8d8;                          -fx-border-width: 0 0 1 0;                          -fx-padding: 10 12;">
 
                 <Label style="-fx-font-size: 11; -fx-font-family: 'Segoe UI';                               -fx-text-fill: #333333;" text="Buscar:" />
-                <TextField fx:id="txtBusca" prefHeight="24" prefWidth="200" promptText="Descrição ou código de barras..." style="-fx-font-size: 11; -fx-font-family: 'Segoe UI';                                   -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1;" />
+                <TextField fx:id="txtBusca" prefHeight="24" prefWidth="200" promptText="Cnpj, Razão Social, Nome Fantasia..." style="-fx-font-size: 11; -fx-font-family: 'Segoe UI';                                   -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1;" />
 
                 <Separator orientation="VERTICAL" style="-fx-background-color: #cccccc;" />
-
-                <Label style="-fx-font-size: 11; -fx-font-family: 'Segoe UI';                               -fx-text-fill: #333333;" text="Categoria:" />
-                <ComboBox fx:id="cbCategoria" prefHeight="24" prefWidth="130" promptText="Todas" style="-fx-font-size: 11; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1;" />
-
-                <Label style="-fx-font-size: 11; -fx-font-family: 'Segoe UI';                               -fx-text-fill: #333333;" text="Fornecedor:" />
-                <ComboBox fx:id="cbFornecedor" prefHeight="24" prefWidth="130" promptText="Todos" style="-fx-font-size: 11; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1;" />
 
                 <Separator orientation="VERTICAL" />
 
@@ -54,15 +47,16 @@
 
                 <TableView fx:id="tableView" prefHeight="600" style="-fx-background-color: white;">
                     <columns>
-                        <TableColumn fx:id="colId" prefWidth="55" text="ID" />
-                        <TableColumn fx:id="colCodigo" prefWidth="140" text="Cód. Barras" />
-                        <TableColumn fx:id="colDescricao" prefWidth="260" text="Descrição" />
-                        <TableColumn fx:id="colUnidade" prefWidth="90" text="Unidade" />
-                        <TableColumn fx:id="colPrecoCusto" prefWidth="120" text="Preço Custo" />
-                        <TableColumn fx:id="colPrecoVenda" prefWidth="120" text="Preço Venda" />
-                        <TableColumn fx:id="colEstoque" prefWidth="90" text="Estoque" />
-                        <TableColumn fx:id="colFornecedor" prefWidth="180" text="Fornecedor" />
-                        <TableColumn fx:id="colAtivo" prefWidth="70" text="Ativo" />
+                        <TableColumn fx:id="colId" prefWidth="150" text="ID" />
+                        <TableColumn fx:id="colCnpj" prefWidth="150" text="Cnpj" />
+                        <TableColumn fx:id="colRazaoSocial" prefWidth="150" text="Razão Social" />
+                        <TableColumn fx:id="colNomeFantasia" prefWidth="150" text="Nome Fantasia" />
+                        <TableColumn fx:id="colTelefone" prefWidth="150" text="Telefone" />
+                        <TableColumn fx:id="colEmail" prefWidth="150" text="Email" />
+                        <TableColumn fx:id="colIdEndereco" prefWidth="150" text="Id Endereço" />
+                        <TableColumn fx:id="colAtivo" prefWidth="150" text="Ativo" />
+                        <TableColumn fx:id="colDataCadastro" prefWidth="150" text="Data Cadastro" />
+                        <TableColumn fx:id="colDataAtualizacao" prefWidth="150" text="Data Atualização" />
                     </columns>
                 </TableView>
             </ScrollPane>

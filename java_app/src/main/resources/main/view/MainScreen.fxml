@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
@@ -31,8 +32,12 @@
             </HBox>
 
             <!-- Menu Bar -->
-            <MenuBar style="-fx-background-color: #f5f5f5; -fx-border-color: #cccccc; -fx-border-width: 0 0 2 0; -fx-padding: 0 8;">
-                <Menu text="Cadastros" />
+            <MenuBar fx:id="menuBar" style="-fx-background-color: #f5f5f5; -fx-border-color: #cccccc; -fx-border-width: 0 0 2 0; -fx-padding: 0 8;">
+                <Menu text="Cadastros" >
+                    <items>
+                        <MenuItem onAction="#handleFornecedores" text="Fornecedores" />
+                    </items>
+                </Menu>
                 <Menu text="Manutenção" />
                 <Menu text="Relatórios" />
                 <Menu text="Utilitários" />
