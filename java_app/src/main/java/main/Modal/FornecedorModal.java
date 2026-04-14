@@ -14,7 +14,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -26,6 +25,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import main.database.DAOs.FornecedorDAO;
+import main.database.DAOs.EnderecoDAO;
 import main.models.Fornecedor;
 
 public class FornecedorModal extends BaseModal<Fornecedor> {
@@ -36,8 +36,8 @@ public class FornecedorModal extends BaseModal<Fornecedor> {
 
 
     public FornecedorModal(Stage owner,
-                       FornecedorDAO fornecedorDAO) {
-        super(owner, "Fornecedores", "/main/view/FornecedorModal.fxml",fornecedorDAO);
+                       FornecedorDAO fornecedorDAO, EnderecoDAO enderecoDAO) {
+        super(owner, "Fornecedores", "/main/view/FornecedorModal.fxml",fornecedorDAO, enderecoDAO);
     }
 
     @Override
@@ -88,7 +88,7 @@ public class FornecedorModal extends BaseModal<Fornecedor> {
         colTelefone.setPrefWidth(150);
 
         TableColumn<Fornecedor, String> colEmail = new TableColumn<>("Email");
-        colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
+        colEmail.setCellValueFactory(new PropertyValueFactory<>("eMail"));
         colEmail.setPrefWidth(150);
 
         TableColumn<Fornecedor, Integer> colIdEndereco = new TableColumn<>("Id Endereço");
@@ -137,7 +137,7 @@ public class FornecedorModal extends BaseModal<Fornecedor> {
     @FXML
     protected void abrirFormNovo() {
         FornecedorFormModal form = new FornecedorFormModal(stage, null,
-            fornecedorDAO);
+            fornecedorDAO, enderecoDAO);
         form.show();
         loadData();
     }
@@ -151,7 +151,7 @@ public class FornecedorModal extends BaseModal<Fornecedor> {
             return;
         }
         FornecedorFormModal form = new FornecedorFormModal(stage, selected,
-            fornecedorDAO);
+            fornecedorDAO, enderecoDAO);
         form.show();
         loadData();
     }

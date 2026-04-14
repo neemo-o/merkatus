@@ -3,11 +3,10 @@ package main.Modal;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
@@ -45,10 +44,11 @@ public class FornecedorFormModal {
 
     private TextField txtCnpj, txtRazaoSocial, txtNomeFantasia;
     private TextField txtTelefone, txtEmail;
-    private ComboBox<Endereco> cbEndereco;
     private CheckBox chkAtivo;
 
     private double xOff, yOff;
+
+    private TextField txtlogradouro, txtnumero, txtcomplemento, txtbairro, txtcidade, txtestado, txtcep;
 
     public FornecedorFormModal(Stage owner, Fornecedor fornecedor,
                             FornecedorDAO fornecedorDAO, EnderecoDAO enderecoDAO) {
@@ -61,13 +61,6 @@ public class FornecedorFormModal {
         stage.initModality(Modality.WINDOW_MODAL);
         stage.initStyle(StageStyle.UNDECORATED);
         stage.setTitle(fornecedor == null ? "Novo Fornecedor" : "Editar Fornecedor");
-
-        TabPane tabPane = new TabPane();
-        tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        tabPane.setStyle(
-            "-fx-font-size: 11;" +
-            "-fx-font-family: 'Segoe UI';"
-        );
 
         Button btnSalvar = new Button("Salvar");
         btnSalvar.setStyle(
@@ -122,41 +115,18 @@ public class FornecedorFormModal {
         topBar.setOnMousePressed(e -> { xOff = stage.getX() - e.getScreenX(); yOff = stage.getY() - e.getScreenY(); });
         topBar.setOnMouseDragged(e -> { stage.setX(e.getScreenX() + xOff); stage.setY(e.getScreenY() + yOff); });
 
-        GridPane grid = criarGrid();
+        TabPane tabPane = new TabPane();
+        tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        tabPane.setStyle(
+            "-fx-font-size: 11;" +
+            "-fx-font-family: 'Segoe UI';"
+        );
+        tabPane.getTabs().addAll(
+            new Tab("Geral",   buildAbaGeral()),
+            new Tab("Endereço",  buildAbaEndereco())
+        );
 
-        TextField txtCnpj         = criarCampo();
-        TextField txtRazaoSocial  = criarCampo();
-        TextField txtNomeFantasia = criarCampo();
-        TextField txtTelefone     = criarCampo();
-        TextField txtEmail        = criarCampo();
-
-        ComboBox<Endereco> cbEndereco = new ComboBox<>();
-        cbEndereco.setMaxWidth(Double.MAX_VALUE);
-        cbEndereco.setPrefHeight(24);
-        cbEndereco.setStyle(ESTILO_CAMPO);
-
-        CheckBox chkAtivo = new CheckBox("Ativo");
-        chkAtivo.setStyle(ESTILO_LABEL);
-        chkAtivo.setSelected(true);
-
-        try {
-            cbEndereco.getItems().addAll(enderecoDAO.findAll());
-        } catch (Exception e) {
-            exibirAlerta("Erro", "Erro ao carregar endereços: " + e.getMessage());
-        }
-
-        aplicarMascaraCnpj(txtCnpj);
-        aplicarMascaraTelefone(txtTelefone);
-
-        grid.addRow(0, criarLabel("CNPJ:"),          txtCnpj);
-        grid.addRow(1, criarLabel("Razão Social:"),  txtRazaoSocial);
-        grid.addRow(2, criarLabel("Nome Fantasia:"), txtNomeFantasia);
-        grid.addRow(3, criarLabel("Telefone:"),      txtTelefone);
-        grid.addRow(4, criarLabel("Email:"),         txtEmail);
-        grid.addRow(5, criarLabel("Endereço:"),      cbEndereco);
-        grid.addRow(6, chkAtivo);
-
-        VBox root = new VBox(topBar, grid, rodape);
+        VBox root = new VBox(topBar, tabPane, rodape);
         stage.setScene(new Scene(root));
 
         if (fornecedor != null) preencherCampos();
@@ -178,6 +148,57 @@ public class FornecedorFormModal {
         fieldCol.setFillWidth(true);
 
         grid.getColumnConstraints().addAll(labelCol, fieldCol);
+        return grid;
+    }
+
+    private GridPane buildAbaGeral() {
+        GridPane grid = criarGrid();
+
+        txtCnpj         = criarCampo();
+        txtRazaoSocial  = criarCampo();
+        txtNomeFantasia = criarCampo();
+        txtTelefone     = criarCampo();
+        txtEmail        = criarCampo();
+        
+
+        chkAtivo = new CheckBox("Ativo");
+        chkAtivo.setStyle(ESTILO_LABEL);
+        chkAtivo.setSelected(true);
+
+        aplicarMascaraCnpj(txtCnpj);
+        aplicarMascaraTelefone(txtTelefone);
+
+        grid.addRow(0, criarLabel("CNPJ:"),          txtCnpj);
+        grid.addRow(1, criarLabel("Razão Social:"),  txtRazaoSocial);
+        grid.addRow(2, criarLabel("Nome Fantasia:"), txtNomeFantasia);
+        grid.addRow(3, criarLabel("Telefone:"),      txtTelefone);
+        grid.addRow(4, criarLabel("Email:"),         txtEmail);
+        grid.addRow(5, chkAtivo);
+
+        return grid;
+    }
+
+    private GridPane buildAbaEndereco() {
+        GridPane grid = criarGrid();
+
+        txtlogradouro = criarCampo();
+        txtnumero = criarCampo();
+        txtcomplemento = criarCampo();
+        txtbairro = criarCampo();
+        txtcidade = criarCampo();
+        txtestado = criarCampo();
+        txtcep = criarCampo();
+
+        aplicarMascaraCep(txtcep);
+
+        grid.addRow(0, criarLabel("Logradouro:"), txtlogradouro);
+        grid.addRow(1, criarLabel("Número:"), txtnumero);
+        grid.addRow(2, criarLabel("Complemento:"), txtcomplemento);
+        grid.addRow(3, criarLabel("Bairro:"), txtbairro);
+        grid.addRow(4, criarLabel("Cidade:"), txtcidade);
+        grid.addRow(5, criarLabel("Estado:"), txtestado);
+        grid.addRow(6, criarLabel("CEP:"), txtcep);
+
         return grid;
     }
 
@@ -235,6 +256,28 @@ public class FornecedorFormModal {
         });
     }
 
+    private void aplicarMascaraCep(TextField campo) {
+        campo.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null) return;
+
+            String digits = newVal.replaceAll("[^0-9]", "");
+
+            if (digits.length() > 8)
+                digits = digits.substring(0, 8);
+
+            String formatado = "";
+            for (int i = 0; i < digits.length(); i++) {
+                if (i == 5) formatado += "-";
+                formatado += digits.charAt(i);
+            }
+
+            if (!formatado.equals(newVal)) {
+                campo.setText(formatado);
+                campo.positionCaret(formatado.length());
+            }
+        });
+    }
+
 
     private void preencherCampos() {
         txtCnpj.setText(fornecedor.getCnpj() != null ? fornecedor.getCnpj() : "");
@@ -243,6 +286,23 @@ public class FornecedorFormModal {
         txtTelefone.setText(fornecedor.getTelefone() != null ? fornecedor.getTelefone() : "");
         txtEmail.setText(fornecedor.getEMail() != null ? fornecedor.getEMail() : "");
         chkAtivo.setSelected(fornecedor.getAtivo());
+
+         if (fornecedor.getIdEndereco() != null) {
+            try {
+                Endereco endereco = enderecoDAO.findById(fornecedor.getIdEndereco()).orElse(null);
+                if (endereco != null) {
+                    txtlogradouro.setText(endereco.getLogradouro() != null ? endereco.getLogradouro() : "");
+                    txtnumero.setText(endereco.getNumero() != null ? endereco.getNumero() : "");
+                    txtcomplemento.setText(endereco.getComplemento() != null ? endereco.getComplemento() : "");
+                    txtbairro.setText(endereco.getBairro() != null ? endereco.getBairro() : "");
+                    txtcidade.setText(endereco.getCidade() != null ? endereco.getCidade() : "");
+                    txtestado.setText(endereco.getEstado() != null ? endereco.getEstado() : "");
+                    txtcep.setText(endereco.getCep() != null ? endereco.getCep() : "");
+                }
+            } catch (Exception e) {
+                exibirAlerta("Erro", "Erro ao carregar endereço: " + e.getMessage());
+            }
+        }
 
     }
 
@@ -260,8 +320,18 @@ public class FornecedorFormModal {
             erros.add("• Telefone");
         if (txtEmail.getText().trim().isEmpty())
             erros.add("• Email");
-        if (cbEndereco.getValue() == null)
-            erros.add("• Endereço");
+        if (txtlogradouro.getText().trim().isEmpty())
+            erros.add("• Logradouro");
+        if (txtnumero.getText().trim().isEmpty())
+            erros.add("• Número");
+        if (txtbairro.getText().trim().isEmpty())
+            erros.add("• Bairro");
+        if (txtcidade.getText().trim().isEmpty())
+            erros.add("• Cidade");
+        if (txtestado.getText().trim().isEmpty())
+            erros.add("• Estado");
+        if (txtcep.getText().trim().isEmpty())
+            erros.add("• CEP");
 
         if (!erros.isEmpty()) {
             exibirAlerta("Campos obrigatórios",
@@ -269,24 +339,46 @@ public class FornecedorFormModal {
             return;
         }
 
-        if (fornecedor == null) fornecedor = new Fornecedor();
-
-        fornecedor.setCnpj(txtCnpj.getText().trim());
-        fornecedor.setRazaoSocial(txtRazaoSocial.getText().trim());
-        fornecedor.setNomeFantasia(txtNomeFantasia.getText().trim());
-        fornecedor.setTelefone(txtTelefone.getText().trim());
-        fornecedor.setEMail(txtEmail.getText().trim());
-        fornecedor.setIdEndereco(cbEndereco.getValue().getIdEndereco());
-        fornecedor.setAtivo(chkAtivo.isSelected());
-
         try {
+            Endereco endereco = new Endereco();
+            endereco.setLogradouro(txtlogradouro.getText().trim());
+            endereco.setNumero(txtnumero.getText().trim());
+            endereco.setComplemento(txtcomplemento.getText().trim());
+            endereco.setBairro(txtbairro.getText().trim());
+            endereco.setCidade(txtcidade.getText().trim());
+            endereco.setEstado(txtestado.getText().trim());
+            endereco.setCep(txtcep.getText().trim());
+            endereco.setDataCadastro(java.time.LocalDateTime.now());
+
+            if (fornecedor == null) {
+                enderecoDAO.save(endereco);
+            } else {
+                endereco.setIdEndereco(fornecedor.getIdEndereco());
+                enderecoDAO.update(endereco);
+            }
+
+            if (fornecedor == null) fornecedor = new Fornecedor();
+
+            fornecedor.setCnpj(txtCnpj.getText().trim());
+            fornecedor.setRazaoSocial(txtRazaoSocial.getText().trim());
+            fornecedor.setNomeFantasia(txtNomeFantasia.getText().trim());
+            fornecedor.setTelefone(txtTelefone.getText().trim());
+            fornecedor.setEMail(txtEmail.getText().trim());
+            fornecedor.setIdEndereco(endereco.getIdEndereco());
+            fornecedor.setAtivo(chkAtivo.isSelected());
+
             if (fornecedor.getIdFornecedor() == null) {
+                fornecedor.setDataCadastro(java.time.LocalDateTime.now());
+                fornecedor.setDataAtualizacao(java.time.LocalDateTime.now());
                 fornecedorDAO.save(fornecedor);
             } else {
+                fornecedor.setDataAtualizacao(java.time.LocalDateTime.now());
                 fornecedorDAO.update(fornecedor);
             }
+
             exibirAlerta("Fornecedor salvo", "Fornecedor salvo com sucesso!");
             stage.close();
+
         } catch (Exception e) {
             exibirAlerta("Erro", "Erro ao salvar o fornecedor: " + e.getMessage());
         }

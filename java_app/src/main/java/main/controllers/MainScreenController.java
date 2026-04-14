@@ -19,6 +19,7 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -32,6 +33,7 @@ import main.database.DAOs.CategoriaDAO;
 import main.database.DAOs.FornecedorDAO;
 import main.database.DAOs.ProdutoDAO;
 import main.database.DAOs.UnidadeMedidaDAO;
+import main.database.DAOs.EnderecoDAO;
 import main.util.FXMLLoaderFactory;
 import main.util.SessionManager;
 
@@ -46,6 +48,7 @@ public class MainScreenController {
     private final CategoriaDAO categoriaDAO;
     private final FornecedorDAO fornecedorDAO;
     private final UnidadeMedidaDAO unidadeMedidaDAO;
+    private final EnderecoDAO enderecoDAO;
 
     public MainScreenController(
             @Qualifier("oficialDataSource") DataSource oficialDataSource,
@@ -53,13 +56,14 @@ public class MainScreenController {
             ProdutoDAO produtoDAO,
             CategoriaDAO categoriaDAO,
             FornecedorDAO fornecedorDAO,
-            UnidadeMedidaDAO unidadeMedidaDAO) {
+            UnidadeMedidaDAO unidadeMedidaDAO, EnderecoDAO enderecoDAO) {
         this.oficialJdbc = new JdbcTemplate(oficialDataSource);
         this.loaderFactory = loaderFactory;
         this.produtoDAO = produtoDAO;
         this.categoriaDAO = categoriaDAO;
         this.fornecedorDAO = fornecedorDAO;
         this.unidadeMedidaDAO = unidadeMedidaDAO;
+        this.enderecoDAO = enderecoDAO;
     }
 
     @FXML
@@ -133,6 +137,7 @@ public class MainScreenController {
 
         carregarDashboard();
         adicionarEfeitosMenu();
+        
     }
 
     private void carregarDashboard() {
@@ -224,7 +229,7 @@ public class MainScreenController {
     private void handleProdutos() {
         setActiveButton(btnProdutos);
         ModalManager.open(ModalType.PRODUTO, (Stage) contentArea.getScene().getWindow(),
-            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO);
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO);
     }
 
     @FXML
@@ -247,8 +252,8 @@ public class MainScreenController {
 
     @FXML
     private void handleFornecedores() {
-        setActiveButton(btnFornecedores);
-        carregarTela("/main/view/Fornecedores.fxml");
+        ModalManager.open(ModalType.FORNECEDOR, (Stage) contentArea.getScene().getWindow(),
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO);
     }
 
     @FXML
