@@ -27,6 +27,7 @@ import javafx.stage.StageStyle;
 import main.database.DAOs.FornecedorDAO;
 import main.database.DAOs.EnderecoDAO;
 import main.models.Fornecedor;
+import main.util.FXMLLoaderFactory;
 
 public class FornecedorModal extends BaseModal<Fornecedor> {
 
@@ -36,8 +37,8 @@ public class FornecedorModal extends BaseModal<Fornecedor> {
 
 
     public FornecedorModal(Stage owner,
-                       FornecedorDAO fornecedorDAO, EnderecoDAO enderecoDAO) {
-        super(owner, "Fornecedores", "/main/view/FornecedorModal.fxml",fornecedorDAO, enderecoDAO);
+                       FornecedorDAO fornecedorDAO, EnderecoDAO enderecoDAO, FXMLLoaderFactory fxmlLoaderFactory) {
+        super(owner, "Fornecedores", "/main/view/FornecedorModal.fxml",fornecedorDAO, enderecoDAO, fxmlLoaderFactory);
     }
 
     @Override
@@ -106,11 +107,16 @@ public class FornecedorModal extends BaseModal<Fornecedor> {
         aplicarFormatoData(colDataCadastro);
         aplicarFormatoData(colDataAtualizacao);
 
-        table.getColumns().addAll(
-            colId, colCnpj, colRazaoSocial, colNomeFantasia,
-            colTelefone, colEmail, colIdEndereco,
-            colDataCadastro, colDataAtualizacao
-        );
+        table.getColumns().add(colId);
+        table.getColumns().add(colCnpj);
+        table.getColumns().add(colRazaoSocial);
+        table.getColumns().add(colNomeFantasia);
+        table.getColumns().add(colTelefone);
+        table.getColumns().add(colEmail);
+        table.getColumns().add(colIdEndereco);
+        table.getColumns().add(colDataCadastro);
+        table.getColumns().add(colDataAtualizacao);
+
     }
 
     @Override
