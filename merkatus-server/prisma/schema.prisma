@@ -1,0 +1,199 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum LicencaStatus {
+  ATIVA
+  EXPIRADA
+  SUSPENSA
+  CANCELADA
+}
+
+enum TerminalTipo {
+  PDV
+  GERENCIADOR
+}
+
+enum TerminalStatus {
+  ATIVO
+  INATIVO
+  BLOQUEADO
+}
+
+enum ValidacaoTipo {
+  HEARTBEAT
+  ATIVACAO
+  VERIFICACAO
+}
+
+enum ValidacaoResultado {
+  APROVADA
+  REJEITADA
+  EXPIRADA
+}
+
+enum UsuarioPerfil {
+  ADMIN
+  SUPORTE
+  COMERCIAL
+}
+
+// ============================================
+// ENTITIES
+// ============================================
+
+model ClienteLicenciado {
+  id_cliente       Int       @id @default(autoincrement())
+  cnpj             String    @unique @db.VarChar(18) // Criptografado (AES)
+  cnpj_hash        String    @unique @db.VarChar(255) // Hash bcrypt para busca
+  razao_social     String    @db.VarChar(255)
+  nome_fantasia    String?   @db.VarChar(255)
+  inscricao_estadual String? @db.VarChar(50)
+  telefone         String?   @db.VarChar(20)
+  email            String?   @db.VarChar(255)
+  responsavel      String?   @db.VarChar(100)
+  logradouro       String?   @db.VarChar(255)
+  numero           String?   @db.VarChar(10)
+  complemento      String?   @db.VarChar(255)
+  bairro           String?   @db.VarChar(100)
+  cidade           String?   @db.VarChar(100)
+  estado           String?   @db.VarChar(2)
+  cep              String?   @db.VarChar(10)
+  observacoes      String?   @db.Text
+  ativo            Boolean   @default(true)
+  data_cadastro    DateTime  @default(now()) @db.Timestamp()
+  data_atualizacao DateTime  @default(now()) @updatedAt @db.Timestamp()
+
+  // Relacionamentos
+  licencas Licenca[]
+
+  @@index([cnpj_hash])
+  @@index([ativo])
+  @@map("clientes_licenciados")
+}
+
+model Licenca {
+  id_licenca                Int           @id @default(autoincrement())
+  id_cliente                Int
+  chave_ativacao            String        @unique @db.VarChar(100)
+  // Capacidade
+  qtd_pdv_incluso           Int           @default(1) @db.SmallInt()
+  qtd_gerenciador_incluso   Int           @default(1) @db.SmallInt()
+  qtd_pdv_adicional         Int           @default(0) @db.SmallInt()
+  qtd_gerenciador_adicional Int           @default(0) @db.SmallInt()
+  qtd_pdv_total             Int           @default(1) @db.SmallInt()
+  qtd_gerenciador_total     Int           @default(1) @db.SmallInt()
+  // Validade
+  data_ativacao             DateTime?     @db.Date
+  data_validade             DateTime      @db.Date
+  status                    LicencaStatus @default(ATIVA)
+  dias_alerta               Int?          @default(30) @db.SmallInt() // Dias antes da expiração para alerta
+  // Segurança
+  hash_validacao            String?       @db.VarChar(255)
+  data_cadastro             DateTime      @default(now()) @db.Timestamp()
+  data_atualizacao          DateTime      @default(now()) @updatedAt @db.Timestamp()
+
+  // Relacionamentos
+  cliente    ClienteLicenciado @relation(fields: [id_cliente], references: [id_cliente], onDelete: Restrict)
+  terminais  TerminalAutorizado[]
+  validacoes ValidacaoLicenca[]
+
+  @@index([id_cliente])
+  @@index([chave_ativacao])
+  @@index([status])
+  @@index([data_validade, status])
+  @@map("licencas")
+}
+
+model TerminalAutorizado {
+  id_terminal           Int             @id @default(autoincrement())
+  id_licenca            Int
+  tipo                  TerminalTipo
+  nome                  String          @db.VarChar(60)
+  identificador_maquina String          @db.VarChar(255)
+  status                TerminalStatus  @default(ATIVO)
+  data_ativacao         DateTime?       @db.Timestamp()
+  ultimo_heartbeat      DateTime?       @db.Timestamp()
+  data_cadastro         DateTime        @default(now()) @db.Timestamp()
+  data_atualizacao      DateTime        @default(now()) @updatedAt @db.Timestamp()
+
+  // Relacionamentos
+  licenca    Licenca           @relation(fields: [id_licenca], references: [id_licenca], onDelete: Restrict)
+  validacoes ValidacaoLicenca[]
+
+  @@unique([id_licenca, identificador_maquina])
+  @@index([id_licenca, tipo, status])
+  @@index([status, ultimo_heartbeat])
+  @@map("terminais_autorizados")
+}
+
+model ValidacaoLicenca {
+  id_validacao          BigInt             @id @default(autoincrement())
+  id_licenca            Int
+  id_terminal           Int?
+  tipo_validacao        ValidacaoTipo
+  identificador_maquina String?            @db.VarChar(255)
+  ip_origem             String?            @db.VarChar(45)
+  resultado             ValidacaoResultado
+  motivo_rejeicao       String?            @db.VarChar(200)
+  dados_retornados      Json?              // JSON estruturado
+  data_validacao        DateTime           @default(now()) @db.Timestamp()
+
+  // Relacionamentos
+  licenca  Licenca             @relation(fields: [id_licenca], references: [id_licenca], onDelete: Restrict)
+  terminal TerminalAutorizado? @relation(fields: [id_terminal], references: [id_terminal], onDelete: SetNull)
+
+  @@index([id_licenca, data_validacao])
+  @@index([data_validacao])
+  @@index([identificador_maquina])
+  @@map("validacoes_licenca")
+}
+
+model UsuarioEquipe {
+  id_usuario      Int       @id @default(autoincrement())
+  nome            String    @db.VarChar(100)
+  email           String    @unique @db.VarChar(120)
+  senha_hash      String    @db.VarChar(255)
+  perfil          UsuarioPerfil @default(SUPORTE)
+  ativo           Boolean   @default(true)
+  senha_trocada   Boolean   @default(false) // Força troca no primeiro login
+  token_reset     String?   @db.VarChar(255) // Token para recuperação de senha
+  ultimo_login    DateTime? @db.Timestamp()
+  data_cadastro   DateTime  @default(now()) @db.Timestamp()
+
+  // Relacionamentos
+  logs LogAcaoEquipe[]
+
+  @@map("usuarios_equipe")
+}
+
+model LogAcaoEquipe {
+  id_log            BigInt    @id @default(autoincrement())
+  id_usuario_equipe Int
+  acao              String    @db.VarChar(80)
+  tabela            String?   @db.VarChar(60)
+  id_registro       Int?
+  dados_antes       Json?     // JSON estruturado
+  dados_depois      Json?     // JSON estruturado
+  ip_address        String?   @db.VarChar(45)
+  data_acao         DateTime  @default(now()) @db.Timestamp()
+
+  // Relacionamentos
+  usuario UsuarioEquipe @relation(fields: [id_usuario_equipe], references: [id_usuario], onDelete: Restrict)
+
+  @@index([id_usuario_equipe])
+  @@index([data_acao])
+  @@map("log_acoes_equipe")
+}
