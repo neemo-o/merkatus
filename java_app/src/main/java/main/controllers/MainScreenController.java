@@ -229,7 +229,7 @@ public class MainScreenController {
     private void handleProdutos() {
         setActiveButton(btnProdutos);
         ModalManager.open(ModalType.PRODUTO, (Stage) contentArea.getScene().getWindow(),
-            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO);
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory);
     }
 
     @FXML
@@ -253,7 +253,7 @@ public class MainScreenController {
     @FXML
     private void handleFornecedores() {
         ModalManager.open(ModalType.FORNECEDOR, (Stage) contentArea.getScene().getWindow(),
-            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO);
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory);
     }
 
     @FXML

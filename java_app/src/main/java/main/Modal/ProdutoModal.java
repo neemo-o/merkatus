@@ -29,6 +29,7 @@ import main.database.DAOs.UnidadeMedidaDAO;
 import main.models.Categoria;
 import main.models.Fornecedor;
 import main.models.Produto;
+import main.util.FXMLLoaderFactory;
 
 public class ProdutoModal extends BaseModal<Produto> {
 
@@ -41,8 +42,8 @@ public class ProdutoModal extends BaseModal<Produto> {
 
     public ProdutoModal(Stage owner,
                        ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
-                       FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO) {
-        super(owner, "Produtos", "/main/view/ProdutoModal.fxml", produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO);
+                       FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO, FXMLLoaderFactory fxmlLoaderFactory) {
+        super(owner, "Produtos", "/main/view/ProdutoModal.fxml", produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, fxmlLoaderFactory);
     }
 
     @Override
@@ -125,11 +126,15 @@ public class ProdutoModal extends BaseModal<Produto> {
         colAtivo.setCellValueFactory(new PropertyValueFactory<>("ativo"));
         colAtivo.setPrefWidth(70);
 
-        table.getColumns().addAll(
-            colId, colCodigo, colDescricao, colUnidade,
-            colPrecoCusto, colPrecoVenda,
-            colEstoque, colFornecedor, colAtivo
-        );
+        table.getColumns().add(colId);
+        table.getColumns().add(colCodigo);
+        table.getColumns().add(colDescricao);
+        table.getColumns().add(colUnidade);
+        table.getColumns().add(colPrecoCusto);
+        table.getColumns().add(colPrecoVenda);
+        table.getColumns().add(colEstoque);
+        table.getColumns().add(colFornecedor);
+        table.getColumns().add(colAtivo);
     }
 
     @Override

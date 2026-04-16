@@ -16,6 +16,7 @@ import main.database.DAOs.CategoriaDAO;
 import main.database.DAOs.FornecedorDAO;
 import main.database.DAOs.ProdutoDAO;
 import main.database.DAOs.UnidadeMedidaDAO;
+import main.util.FXMLLoaderFactory;
 import main.database.DAOs.EnderecoDAO;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,26 +39,28 @@ public abstract class BaseModal<T> {
     protected FornecedorDAO fornecedorDAO;
     protected UnidadeMedidaDAO unidadeMedidaDAO;
     protected EnderecoDAO enderecoDAO;
+    protected FXMLLoaderFactory fxmlLoaderFactory;
 
     public BaseModal(Stage owner, String title, String fxmlPath,
                     ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
-                    FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO) {
-        this(owner, title, fxmlPath, produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, null);
+                    FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO, FXMLLoaderFactory fxmlLoaderFactory) {
+        this(owner, title, fxmlPath, produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO,null,fxmlLoaderFactory);
     }
 
     public BaseModal(Stage owner, String title, String fxmlPath,
-                    FornecedorDAO fornecedorDAO, EnderecoDAO enderecoDAO) {
-        this(owner, title, fxmlPath, null, null, fornecedorDAO, null, enderecoDAO);
+                    FornecedorDAO fornecedorDAO, EnderecoDAO enderecoDAO,FXMLLoaderFactory fxmlLoaderFactory) {
+        this(owner, title, fxmlPath, null, null, fornecedorDAO, null, enderecoDAO, fxmlLoaderFactory);
     }
 
     public BaseModal(Stage owner, String title, String fxmlPath,
                      ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
-                     FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO, EnderecoDAO enderecoDAO) {
+                     FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO, EnderecoDAO enderecoDAO, FXMLLoaderFactory fxmlLoaderFactory) {
         this.produtoDAO = produtoDAO;
         this.categoriaDAO = categoriaDAO;
         this.fornecedorDAO = fornecedorDAO;
         this.unidadeMedidaDAO = unidadeMedidaDAO;
         this.enderecoDAO = enderecoDAO;
+        this.fxmlLoaderFactory = fxmlLoaderFactory;
         
 
         try {
@@ -68,9 +71,7 @@ public abstract class BaseModal<T> {
 
             stage.getIcons().add(new Image(getClass().getResourceAsStream("/main/resources/logo.png")));
 
-            FXMLLoader loader = new FXMLLoader(
-                getClass().getResource(fxmlPath)
-            );
+            FXMLLoader loader = fxmlLoaderFactory.create(fxmlPath);
             loader.setController(this);
 
             Parent root = loader.load();
