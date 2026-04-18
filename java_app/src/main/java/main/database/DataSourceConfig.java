@@ -1,64 +1,47 @@
 package main.database;
 
 import javax.sql.DataSource;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
-
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 @Configuration
 public class DataSourceConfig {
 
-    @Value("${db.oficial.url}")
-    private String oficialUrl;
+    private final OfficialDataSourceProperties oficialProps;
+    private final LicencasDataSourceProperties licencasProps;
 
-    @Value("${db.oficial.username}")
-    private String oficialUsername;
-
-    @Value("${db.oficial.password}")
-    private String oficialPassword;
-
-    @Value("${db.licencas.url}")
-    private String licencasUrl;
-
-    @Value("${db.licencas.username}")
-    private String licencasUsername;
-
-    @Value("${db.licencas.password}")
-    private String licencasPassword;
+    public DataSourceConfig(OfficialDataSourceProperties oficialProps,
+                            LicencasDataSourceProperties licencasProps) {
+        this.oficialProps = oficialProps;
+        this.licencasProps = licencasProps;
+    }
 
     @Bean
     @Primary
     public DataSource oficialDataSource() {
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(oficialUrl);
-        config.setUsername(oficialUsername);
-        config.setPassword(oficialPassword);
+        config.setJdbcUrl(oficialProps.getUrl());
+        config.setUsername(oficialProps.getUsername());
+        config.setPassword(oficialProps.getPassword());
         config.setDriverClassName("org.postgresql.Driver");
-
-        // Pool
-        config.setMaximumPoolSize(10); // máximo de conexões abertas
-        config.setMinimumIdle(2); // mínimo mantido em espera
-        config.setConnectionTimeout(30000); // 30s pra conseguir uma conexão
-        config.setIdleTimeout(600000); // fecha conexão ociosa após 10min
-        config.setMaxLifetime(1800000); // recicla conexão após 30min
-
+        config.setMaximumPoolSize(10);
+        config.setMinimumIdle(2);
+        config.setConnectionTimeout(30000);
+        config.setIdleTimeout(600000);
+        config.setMaxLifetime(1800000);
         config.setPoolName("ERP-Oficial-Pool");
-
         return new HikariDataSource(config);
     }
 
     @Bean
     public DataSource licencasDataSource() {
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(licencasUrl);
-        config.setUsername(licencasUsername);
-        config.setPassword(licencasPassword);
+        config.setJdbcUrl(licencasProps.getUrl());
+        config.setUsername(licencasProps.getUsername());
+        config.setPassword(licencasProps.getPassword());
         config.setDriverClassName("org.postgresql.Driver");
         config.addDataSourceProperty("ssl", "true");
         config.addDataSourceProperty("sslmode", "require");

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- ═══════════════════════════════════════════════
+         APPENDERS — definem o destino dos logs
+    ═══════════════════════════════════════════════ -->
+
+    <!-- Console — logs gerais da aplicação -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} [%level] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Arquivo geral da aplicação -->
+    <appender name="APP_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/app.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Cria um novo arquivo todos os dias, mantém os últimos 30 dias -->
+            <fileNamePattern>logs/app.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%level] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Arquivo exclusivo do banco de dados -->
+    <appender name="DB_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/db.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Cria um novo arquivo todos os dias, mantém os últimos 30 dias -->
+            <fileNamePattern>logs/db.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%level] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+
+    <!-- ═══════════════════════════════════════════════
+         LOGGERS — definem quem loga e em qual nível
+    ═══════════════════════════════════════════════ -->
+
+    <!-- Tudo que vier do seu pacote de banco vai pro db.log -->
+    <logger name="main.database" level="DEBUG" additivity="false">
+        <appender-ref ref="DB_FILE" />
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- HikariCP — pool de conexões -->
+    <logger name="com.zaxxer.hikari" level="DEBUG" additivity="false">
+        <appender-ref ref="DB_FILE" />
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Driver PostgreSQL -->
+    <logger name="org.postgresql" level="WARN" additivity="false">
+        <appender-ref ref="DB_FILE" />
+    </logger>
+
+
+    <!-- ═══════════════════════════════════════════════
+         ROOT — captura tudo que não foi capturado acima
+    ═══════════════════════════════════════════════ -->
+    <root level="WARN">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="APP_FILE" />
+    </root>
+
+</configuration>

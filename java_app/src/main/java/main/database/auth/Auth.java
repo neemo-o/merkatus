@@ -5,17 +5,21 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class Auth {
 
     private final JdbcTemplate licencasJdbc;
+    private static final Logger logger = LoggerFactory.getLogger(Auth.class);
 
     public Auth(@Qualifier("licencasDataSource") DataSource licencasDataSource) {
         this.licencasJdbc = new JdbcTemplate(licencasDataSource);
     }
 
     public boolean validateCNPJ(String cnpj) {
+        logger.debug("Validando CNPJ: '{}'", cnpj);
         String sql = """
             SELECT l.status
             FROM clientes_licenciados c
@@ -27,7 +31,7 @@ public class Auth {
             String status = licencasJdbc.queryForObject(sql, String.class, cnpj);
             return "ATIVA".equals(status);
         } catch (Exception e) {
-            System.err.println("Erro ao validar CNPJ: " + e.getMessage());
+            logger.error("Erro ao validar CNPJ: {}", e.getMessage());
         }
         return false;
     }
@@ -37,7 +41,7 @@ public class Auth {
             licencasJdbc.queryForObject("SELECT 1", Integer.class);
             return true;
         } catch (Exception e) {
-            System.err.println("Erro ao testar conexão: " + e.getMessage());
+            logger.error("Erro ao testar conexão: {}", e.getMessage());
             return false;
         }
     }

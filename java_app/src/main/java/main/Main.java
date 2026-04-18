@@ -3,6 +3,7 @@ package main;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -12,7 +13,14 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.fxml.FXMLLoader;
 
+import main.database.OfficialDataSourceProperties;
+import main.database.LicencasDataSourceProperties;
+
 @SpringBootApplication
+@EnableConfigurationProperties({
+    OfficialDataSourceProperties.class,
+    LicencasDataSourceProperties.class
+})
 public class Main extends Application {
 
 	private ConfigurableApplicationContext springContext;

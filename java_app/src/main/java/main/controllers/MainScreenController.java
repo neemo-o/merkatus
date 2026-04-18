@@ -36,11 +36,14 @@ import main.database.DAOs.UnidadeMedidaDAO;
 import main.database.DAOs.EnderecoDAO;
 import main.util.FXMLLoaderFactory;
 import main.util.SessionManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class MainScreenController {
 
     private final JdbcTemplate oficialJdbc;
+    private static final Logger logger = LoggerFactory.getLogger(MainScreenController.class);
 
     private final FXMLLoaderFactory loaderFactory;
 
@@ -154,7 +157,7 @@ public class MainScreenController {
             produtosText.setText(String.valueOf(row.get("total_produtos")));
             clientesText.setText(String.valueOf(row.get("total_clientes")));
         } catch (Exception e) {
-            System.err.println("Erro ao carregar dashboard: " + e.getMessage());
+            logger.error("Erro ao carregar dashboard: {}", e.getMessage());
         }
     }
 
@@ -167,7 +170,7 @@ public class MainScreenController {
             stage.setHeight(screen.getHeight());
             stage.setResizable(false);
         } catch (Exception e) {
-            System.err.println("Erro ao configurar stage: " + e.getMessage());
+            logger.error("Erro ao configurar stage: {}", e.getMessage());
         }
     }
 
@@ -206,7 +209,7 @@ public class MainScreenController {
             Parent tela = loader.load();
             contentArea.getChildren().setAll(tela);
         } catch (Exception e) {
-            System.err.println("Erro ao carregar tela: " + fxmlPath);
+            logger.error("Erro ao carregar tela: {}", fxmlPath, e);
             Text erro = new Text("Erro ao carregar módulo: " + e.getMessage());
             erro.setStyle("-fx-fill: #d32f2f; -fx-font-size: 14;");
             contentArea.getChildren().setAll(erro);

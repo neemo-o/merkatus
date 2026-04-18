@@ -5,12 +5,15 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 
 @Component
 public class UserAuth {
 
     private final JdbcTemplate oficialJdbc;
+    private static final Logger logger = LoggerFactory.getLogger(UserAuth.class);
 
     public UserAuth(@Qualifier("oficialDataSource") DataSource oficialDataSource) {
         this.oficialJdbc = new JdbcTemplate(oficialDataSource);
@@ -24,7 +27,7 @@ public class UserAuth {
             if (Boolean.TRUE.equals((Boolean) row.get("bloqueado"))) return false;
             return senha.equals(row.get("senha_hash"));
         } catch (Exception e) {
-            System.err.println("Erro ao autenticar usuário: " + e.getMessage());
+            logger.error("Erro ao autenticar usuário: {}", e.getMessage());
         }
         return false;
     }
@@ -43,7 +46,7 @@ public class UserAuth {
             u.setLogin((String) row.get("login"));
             return u;
         } catch (Exception e) {
-            System.err.println("Erro ao buscar usuário: " + e.getMessage());
+            logger.error("Erro ao buscar usuário: {}", e.getMessage());
         }
         return null;
     }
