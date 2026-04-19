@@ -1,5 +1,10 @@
-import { prisma } from '../config/database';
-import { TerminalAutorizado, TerminalStatus, TerminalTipo, Prisma } from '@prisma/client';
+import { prisma } from "../config/database";
+import {
+  TerminalAutorizado,
+  TerminalStatus,
+  TerminalTipo,
+  Prisma,
+} from "@prisma/client";
 
 export interface TerminalFilters {
   id_licenca?: number;
@@ -21,7 +26,7 @@ export class TerminalRepository {
     id: number,
     options?: {
       includeLicenca?: boolean;
-    }
+    },
   ): Promise<(TerminalAutorizado & { licenca?: any }) | null> {
     const include: Prisma.TerminalAutorizadoInclude = {};
 
@@ -45,7 +50,7 @@ export class TerminalRepository {
 
   async findByLicencaAndMaquina(
     idLicenca: number,
-    identificadorMaquina: string
+    identificadorMaquina: string,
   ): Promise<TerminalAutorizado | null> {
     return prisma.terminalAutorizado.findUnique({
       where: {
@@ -61,13 +66,15 @@ export class TerminalRepository {
     filters: TerminalFilters,
     skip: number,
     take: number,
-    orderBy: { [key: string]: 'asc' | 'desc' }
-  ): Promise<(TerminalAutorizado & {
-    licenca: {
-      id_licenca: number;
-      chave_ativacao: string;
-    };
-  })[]> {
+    orderBy: { [key: string]: "asc" | "desc" },
+  ): Promise<
+    (TerminalAutorizado & {
+      licenca: {
+        id_licenca: number;
+        chave_ativacao: string;
+      };
+    })[]
+  > {
     const where: Prisma.TerminalAutorizadoWhereInput = {};
 
     if (filters.id_licenca) {
@@ -117,14 +124,14 @@ export class TerminalRepository {
   }
 
   async create(
-    data: Prisma.TerminalAutorizadoCreateInput
+    data: Prisma.TerminalAutorizadoCreateInput,
   ): Promise<TerminalAutorizado> {
     return prisma.terminalAutorizado.create({ data });
   }
 
   async update(
     id: number,
-    data: Prisma.TerminalAutorizadoUpdateInput
+    data: Prisma.TerminalAutorizadoUpdateInput,
   ): Promise<TerminalAutorizado> {
     return prisma.terminalAutorizado.update({
       where: { id_terminal: id },
@@ -134,7 +141,7 @@ export class TerminalRepository {
 
   async updateStatus(
     id: number,
-    status: TerminalStatus
+    status: TerminalStatus,
   ): Promise<TerminalAutorizado> {
     return prisma.terminalAutorizado.update({
       where: { id_terminal: id },
@@ -155,28 +162,32 @@ export class TerminalRepository {
     });
   }
 
+  async deleteByLicencaId(idLicenca: number): Promise<Prisma.BatchPayload> {
+    return prisma.terminalAutorizado.deleteMany({
+      where: { id_licenca: idLicenca },
+    });
+  }
+
   async countByLicencaAndTipo(
     idLicenca: number,
-    tipo: TerminalTipo
+    tipo: TerminalTipo,
   ): Promise<number> {
     return prisma.terminalAutorizado.count({
       where: {
         id_licenca: idLicenca,
         tipo,
-        status: 'ATIVO',
+        status: "ATIVO",
       },
     });
   }
 
-  async findInativosPorTempo(
-    minutos: number
-  ): Promise<TerminalAutorizado[]> {
+  async findInativosPorTempo(minutos: number): Promise<TerminalAutorizado[]> {
     const dataLimite = new Date();
     dataLimite.setMinutes(dataLimite.getMinutes() - minutos);
 
     return prisma.terminalAutorizado.findMany({
       where: {
-        status: 'ATIVO',
+        status: "ATIVO",
         OR: [
           { ultimo_heartbeat: { lt: dataLimite } },
           { ultimo_heartbeat: null },

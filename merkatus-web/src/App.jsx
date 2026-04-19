@@ -2,6 +2,7 @@ import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ToastProvider } from "./context/ToastContext";
 import useScrollAnimation from "./hooks/useScrollAnimation";
 import Topbar from "./components/Topbar";
 import Hero from "./components/Hero";
@@ -12,6 +13,15 @@ import Download from "./components/Download";
 import Footer from "./components/Footer";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import ClienteListPage from "./pages/ClienteListPage";
+import ClienteCreatePage from "./pages/ClienteCreatePage";
+import ClienteEditPage from "./pages/ClienteEditPage";
+import ClienteDetailsPage from "./pages/ClienteDetailsPage";
+import LicencaListPage from "./pages/LicencaListPage";
+import LicencaCreatePage from "./pages/LicencaCreatePage";
+import LicencaDetailsPage from "./pages/LicencaDetailsPage";
+import LicencaEditPage from "./pages/LicencaEditPage";
+import AuditLogPage from "./pages/AuditLogPage";
 
 function ScrollToTop() {
   const location = useLocation();
@@ -103,6 +113,82 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+        {/* Clientes - rotas protegidas */}
+        <Route
+          path="/dashboard/clientes"
+          element={
+            <ProtectedRoute>
+              <ClienteListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/clientes/create"
+          element={
+            <ProtectedRoute>
+              <ClienteCreatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/clientes/:id"
+          element={
+            <ProtectedRoute>
+              <ClienteDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/clientes/:id/edit"
+          element={
+            <ProtectedRoute>
+              <ClienteEditPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Licenças - rotas protegidas */}
+        <Route
+          path="/dashboard/licencas"
+          element={
+            <ProtectedRoute>
+              <LicencaListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/licencas/create"
+          element={
+            <ProtectedRoute>
+              <LicencaCreatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/licencas/:id"
+          element={
+            <ProtectedRoute>
+              <LicencaDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/licencas/:id/edit"
+          element={
+            <ProtectedRoute>
+              <LicencaEditPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/auditoria"
+          element={
+            <ProtectedRoute>
+              <AuditLogPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </>
   );
@@ -112,12 +198,14 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <div
-          className="bg-[var(--bg)] min-h-screen transition-colors duration-300"
-          style={{ color: "var(--text)" }}
-        >
-          <AppRoutes />
-        </div>
+        <ToastProvider>
+          <div
+            className="bg-[var(--bg)] min-h-screen transition-colors duration-300"
+            style={{ color: "var(--text)" }}
+          >
+            <AppRoutes />
+          </div>
+        </ToastProvider>
       </AuthProvider>
     </ThemeProvider>
   );

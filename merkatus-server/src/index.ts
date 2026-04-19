@@ -1,60 +1,70 @@
-import express, { Application, Request, Response } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import { env } from './config/env';
-import { logger } from './config/logger';
-import { errorHandler } from './middlewares/errorHandler';
+import express, { Application, Request, Response } from "express";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import { env } from "./config/env";
+import { logger } from "./config/logger";
+import { errorHandler } from "./middlewares/errorHandler";
 
 // Import routes
-import clienteRoutes from './routes/cliente.routes';
-import licencaRoutes from './routes/licenca.routes';
-import authRoutes from './routes/auth.routes';
+import clienteRoutes from "./routes/cliente.routes";
+import licencaRoutes from "./routes/licenca.routes";
+import authRoutes from "./routes/auth.routes";
+import logsRoutes from "./routes/logs.routes";
 
 const app: Application = express();
 
 // Middlewares de segurança
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      connectSrc: ["'self'", "http://localhost:3000", "http://localhost:5173"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        connectSrc: [
+          "'self'",
+          "http://localhost:3000",
+          "http://localhost:5173",
+          "https://merkatus-web.vercel.app",
+        ],
+      },
     },
-  },
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-}));
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+);
 
 // Configura CORS para múltiplas origens
-const allowedOrigins = env.CORS_ORIGIN.split(',').map(o => o.trim());
-app.use(cors({
-  origin: (origin, callback) => {
-    // Permite requisições sem origin (ex: Postman, curl)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-}));
+const allowedOrigins = env.CORS_ORIGIN.split(",").map((o) => o.trim());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Permite requisições sem origin (ex: Postman, curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  }),
+);
 
 // Body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Logging HTTP
-if (env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
+if (env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
 }
 
 // Health check
-app.get('/health', (_req: Request, res: Response) => {
+app.get("/health", (_req: Request, res: Response) => {
   res.json({
-    status: 'OK',
+    status: "OK",
     timestamp: new Date().toISOString(),
     environment: env.NODE_ENV,
-    version: '1.0.0',
+    version: "1.0.0",
   });
 });
 
@@ -62,15 +72,16 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use(`${env.API_PREFIX}/auth`, authRoutes);
 app.use(`${env.API_PREFIX}/clientes`, clienteRoutes);
 app.use(`${env.API_PREFIX}/licencas`, licencaRoutes);
+app.use(`${env.API_PREFIX}/logs`, logsRoutes);
 
 // Root endpoint
-app.get('/', (_req: Request, res: Response) => {
+app.get("/", (_req: Request, res: Response) => {
   res.json({
-    name: 'Merkatus Server',
-    version: '1.0.0',
-    description: 'API de licenciamento ERP',
+    name: "Merkatus Server",
+    version: "1.0.0",
+    description: "API de licenciamento ERP",
     endpoints: {
-      health: '/health',
+      health: "/health",
       clientes: `${env.API_PREFIX}/clientes`,
       licencas: `${env.API_PREFIX}/licencas`,
     },
@@ -85,8 +96,8 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     error: {
-      code: 'NOT_FOUND',
-      message: 'Endpoint não encontrado',
+      code: "NOT_FOUND",
+      message: "Endpoint não encontrado",
     },
     meta: {
       timestamp: new Date().toISOString(),
@@ -104,13 +115,13 @@ app.listen(PORT, () => {
 });
 
 // Handle uncaught errors
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught Exception:", error);
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled Rejection:', reason);
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled Rejection:", reason);
   process.exit(1);
 });
 
