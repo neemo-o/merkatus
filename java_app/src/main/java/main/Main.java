@@ -27,8 +27,33 @@ public class Main extends Application {
 
 	  @Override
     public void init() {
-        // Spring sobe ANTES da janela abrir
+       
+		try {
+		 // Spring sobe ANTES da janela abrir
         springContext = SpringApplication.run(Main.class);
+		} catch (Exception e) {
+			Throwable cause = e.getCause() != null ? e.getCause() : e;
+        if (cause.getMessage() != null && (
+            cause.getMessage().contains("timeout") ||
+            cause.getMessage().contains("Connection refused") ||
+            cause instanceof com.zaxxer.hikari.pool.HikariPool.PoolInitializationException
+        )) {
+            // Mostrar alert JavaFX na thread certa
+            javafx.application.Platform.startup(() -> {});
+            javafx.application.Platform.runLater(() -> {
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                    javafx.scene.control.Alert.AlertType.ERROR
+                );
+                alert.setTitle("Erro de Conexão");
+                alert.setHeaderText("Não foi possível conectar ao banco de dados.");
+                alert.setContentText("Verifique se o PostgreSQL está rodando e as credenciais em application.properties.");
+                alert.showAndWait();
+                javafx.application.Platform.exit();
+            });
+        } else {
+            throw e;
+        }
+		}
     }
 
 	@Override
