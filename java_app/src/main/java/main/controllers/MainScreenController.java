@@ -244,7 +244,8 @@ public class MainScreenController {
     @FXML
     private void handleVendas() {
         setActiveButton(btnVendas);
-        carregarTela("/main/view/Vendas.fxml");
+        ModalManager.open(ModalType.VENDA, (Stage) contentArea.getScene().getWindow(),
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory);
     }
 
     @FXML

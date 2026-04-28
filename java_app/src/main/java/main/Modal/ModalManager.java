@@ -16,6 +16,7 @@ public class ModalManager {
         BaseModal<?> modal = switch (type) {
             case PRODUTO -> new ProdutoModal(owner, produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, fxmlLoaderFactory );
             case FORNECEDOR -> new FornecedorModal(owner, fornecedorDAO, enderecoDAO, fxmlLoaderFactory);
+            case VENDA -> new VendaModal(owner, fxmlLoaderFactory);
         };
         modal.show();
     }
