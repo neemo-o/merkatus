@@ -53,7 +53,7 @@
                         <TableColumn fx:id="colNomeFantasia" prefWidth="150" text="Nome Fantasia" />
                         <TableColumn fx:id="colTelefone" prefWidth="150" text="Telefone" />
                         <TableColumn fx:id="colEmail" prefWidth="150" text="Email" />
-                        <TableColumn fx:id="colIdEndereco" prefWidth="150" text="Id Endereço" />
+                        <TableColumn fx:id="colEndereco" prefWidth="150" text=" Endereço" />
                         <TableColumn fx:id="colAtivo" prefWidth="150" text="Ativo" />
                         <TableColumn fx:id="colDataCadastro" prefWidth="150" text="Data Cadastro" />
                         <TableColumn fx:id="colDataAtualizacao" prefWidth="150" text="Data Atualização" />

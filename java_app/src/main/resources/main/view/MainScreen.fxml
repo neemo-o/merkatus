@@ -36,10 +36,15 @@
                 <Menu text="Cadastros" >
                     <items>
                         <MenuItem onAction="#handleFornecedores" text="Fornecedores" />
+                        <MenuItem onAction="#handleProdutos" text="Produtos" />
                     </items>
                 </Menu>
                 <Menu text="Manutenção" />
-                <Menu text="Relatórios" />
+                <Menu text="Relatórios" >
+                    <items>
+                        <MenuItem onAction="#handleVendas" text="Vendas" />
+                    </items>
+                </Menu>
                 <Menu text="Utilitários" />
                 <Menu text="Configurações" />
                 <Menu text="Ajuda" />

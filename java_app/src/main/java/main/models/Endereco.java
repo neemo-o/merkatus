@@ -20,4 +20,9 @@ public class Endereco {
     private String estado;
     private String cep;
     private LocalDateTime dataCadastro;
+
+    @Override
+    public String toString() {
+        return logradouro + ", " + numero + " - " + estado;
+    }
 }
