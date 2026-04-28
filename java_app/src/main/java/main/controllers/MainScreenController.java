@@ -126,7 +126,7 @@ public class MainScreenController {
 
         Usuario usuario = SessionManager.getUsuarioAtual();
         if (usuario != null) {
-            usuarioLabel.setText(usuario.getNomeExibicao());
+            usuarioLabel.setText(usuario.toString());
         }
 
         Timeline clock = new Timeline(

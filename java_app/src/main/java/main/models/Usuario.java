@@ -1,11 +1,15 @@
 package main.models;
 
 import java.time.LocalDateTime;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class Usuario {
 
     private Integer idUsuario;
