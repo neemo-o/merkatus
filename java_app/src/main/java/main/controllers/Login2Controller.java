@@ -72,7 +72,7 @@ public class Login2Controller {
                 usuarioEncontrado = userAuth.buscarPorId(id);
 
                 if (usuarioEncontrado != null) {
-                    usuarioEncontradoLabel.setText("USUÁRIO: " + usuarioEncontrado.getNomeExibicao().toUpperCase());
+                    usuarioEncontradoLabel.setText("USUÁRIO: " + usuarioEncontrado.toString().toUpperCase());
                     usuarioEncontradoLabel.setStyle("-fx-text-fill: #2c6e3c; -fx-font-size: 12; -fx-font-weight: bold;");
                     usuarioEncontradoLabel.setVisible(true);
                     statusMessage.setVisible(false);
@@ -135,7 +135,7 @@ public class Login2Controller {
             if (controller instanceof MainScreenController mainscreenController) {
                 Usuario usuario = SessionManager.getUsuarioAtual();
                 if (usuario != null) {
-                    mainscreenController.setUsuario(usuario.getNomeExibicao());
+                    mainscreenController.setUsuario(usuario.toString());
                 }
             }
 
