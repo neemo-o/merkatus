@@ -48,7 +48,7 @@ public abstract class BaseModal<T> {
     }
 
     public BaseModal(Stage owner, String title, String fxmlPath,
-                    FornecedorDAO fornecedorDAO, EnderecoDAO enderecoDAO,FXMLLoaderFactory fxmlLoaderFactory) {
+                    FornecedorDAO fornecedorDAO, EnderecoDAO enderecoDAO, FXMLLoaderFactory fxmlLoaderFactory) {
         this(owner, title, fxmlPath, null, null, fornecedorDAO, null, enderecoDAO, fxmlLoaderFactory);
     }
 
@@ -56,6 +56,16 @@ public abstract class BaseModal<T> {
 
     public BaseModal(Stage owner, String title, String fxmlPath) {
        this(owner, title, fxmlPath, null, null, null, null, null, null);
+    }
+
+    public BaseModal(Stage owner, String title, String fxmlPath,
+                    UnidadeMedidaDAO unidadeMedidaDAO, FXMLLoaderFactory fxmlLoaderFactory) {
+        this(owner, title, fxmlPath, null, null, null, unidadeMedidaDAO, null, fxmlLoaderFactory);
+    }
+
+    public BaseModal(Stage owner, String title, String fxmlPath,
+                    CategoriaDAO categoriaDAO, FXMLLoaderFactory fxmlLoaderFactory) {
+        this(owner, title, fxmlPath, null, categoriaDAO, null, null, null, fxmlLoaderFactory);
     }
 
     public BaseModal(Stage owner, String title, String fxmlPath,
