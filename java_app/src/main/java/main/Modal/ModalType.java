@@ -1,5 +1,7 @@
 package main.Modal;
 public enum ModalType {
     PRODUTO,
-    FORNECEDOR
+    FORNECEDOR,
+    UNIDADE_MEDIDA,
+    CATEGORIA
 }

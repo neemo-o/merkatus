@@ -260,15 +260,21 @@ public class MainScreenController {
     }
 
     @FXML
-    private void handleRelatorios() {
-        setActiveButton(btnRelatorios);
-        carregarTela("/main/view/Relatorios.fxml");
+    private void handleUnidadesMedida() {
+        ModalManager.open(ModalType.UNIDADE_MEDIDA, (Stage) contentArea.getScene().getWindow(),
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory);
     }
 
     @FXML
-    private void handleConfiguracoes() {
-        setActiveButton(btnConfiguracoes);
-        carregarTela("/main/view/Configuracoes.fxml");
+    private void handleCategorias() {
+        ModalManager.open(ModalType.CATEGORIA, (Stage) contentArea.getScene().getWindow(),
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory);
+    }
+
+    @FXML
+    private void handleRelatorios() {
+        setActiveButton(btnRelatorios);
+        carregarTela("/main/view/Relatorios.fxml");
     }
 
     @FXML
