@@ -5,6 +5,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -48,7 +49,9 @@ public class FornecedorFormModal {
 
     private double xOff, yOff;
 
-    private TextField txtlogradouro, txtnumero, txtcomplemento, txtbairro, txtcidade, txtestado, txtcep;
+    private TextField txtlogradouro, txtnumero, txtcomplemento, txtbairro, txtcidade, txtcep;
+
+    private ComboBox<String> cbEstado;
 
     public FornecedorFormModal(Stage owner, Fornecedor fornecedor,
                             FornecedorDAO fornecedorDAO, EnderecoDAO enderecoDAO) {
@@ -186,8 +189,19 @@ public class FornecedorFormModal {
         txtcomplemento = criarCampo();
         txtbairro = criarCampo();
         txtcidade = criarCampo();
-        txtestado = criarCampo();
         txtcep = criarCampo();
+
+        cbEstado = new ComboBox<>();
+        cbEstado.getItems().addAll(
+            "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO",
+            "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
+            "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+        );
+        cbEstado.setMaxWidth(Double.MAX_VALUE);
+        cbEstado.setPrefHeight(24);
+        cbEstado.setStyle(ESTILO_CAMPO);
+        cbEstado.setPromptText("Selecione...");
+
 
         aplicarMascaraCep(txtcep);
 
@@ -196,7 +210,7 @@ public class FornecedorFormModal {
         grid.addRow(2, criarLabel("Complemento:"), txtcomplemento);
         grid.addRow(3, criarLabel("Bairro:"), txtbairro);
         grid.addRow(4, criarLabel("Cidade:"), txtcidade);
-        grid.addRow(5, criarLabel("Estado:"), txtestado);
+        grid.addRow(5, criarLabel("Estado:"), cbEstado);
         grid.addRow(6, criarLabel("CEP:"), txtcep);
 
         return grid;
@@ -296,7 +310,7 @@ public class FornecedorFormModal {
                     txtcomplemento.setText(endereco.getComplemento() != null ? endereco.getComplemento() : "");
                     txtbairro.setText(endereco.getBairro() != null ? endereco.getBairro() : "");
                     txtcidade.setText(endereco.getCidade() != null ? endereco.getCidade() : "");
-                    txtestado.setText(endereco.getEstado() != null ? endereco.getEstado() : "");
+                    cbEstado.setValue(endereco.getEstado());
                     txtcep.setText(endereco.getCep() != null ? endereco.getCep() : "");
                 }
             } catch (Exception e) {
@@ -328,7 +342,7 @@ public class FornecedorFormModal {
             erros.add("• Bairro");
         if (txtcidade.getText().trim().isEmpty())
             erros.add("• Cidade");
-        if (txtestado.getText().trim().isEmpty())
+        if (cbEstado.getValue() == null)
             erros.add("• Estado");
         if (txtcep.getText().trim().isEmpty())
             erros.add("• CEP");
@@ -346,7 +360,7 @@ public class FornecedorFormModal {
             endereco.setComplemento(txtcomplemento.getText().trim());
             endereco.setBairro(txtbairro.getText().trim());
             endereco.setCidade(txtcidade.getText().trim());
-            endereco.setEstado(txtestado.getText().trim());
+            endereco.setEstado(cbEstado.getValue());
             endereco.setCep(txtcep.getText().trim());
             endereco.setDataCadastro(java.time.LocalDateTime.now());
 

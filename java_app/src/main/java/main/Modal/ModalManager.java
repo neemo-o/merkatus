@@ -18,6 +18,9 @@ public class ModalManager {
             case FORNECEDOR     -> new FornecedorModal(owner, fornecedorDAO, enderecoDAO, fxmlLoaderFactory);
             case UNIDADE_MEDIDA -> new UnidadeMedidaModal(owner, unidadeMedidaDAO, fxmlLoaderFactory);
             case CATEGORIA      -> new CategoriaModal(owner, categoriaDAO, fxmlLoaderFactory);
+            case PRODUTO -> new ProdutoModal(owner, produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, fxmlLoaderFactory );
+            case FORNECEDOR -> new FornecedorModal(owner, fornecedorDAO, enderecoDAO, fxmlLoaderFactory);
+            case VENDA -> new VendaModal(owner, fxmlLoaderFactory);
         };
         modal.show();
     }

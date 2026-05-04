@@ -52,6 +52,12 @@ public abstract class BaseModal<T> {
         this(owner, title, fxmlPath, null, null, fornecedorDAO, null, enderecoDAO, fxmlLoaderFactory);
     }
 
+    // base modal temporario par o layout visual do modal de vendas.
+
+    public BaseModal(Stage owner, String title, String fxmlPath) {
+       this(owner, title, fxmlPath, null, null, null, null, null, null);
+    }
+
     public BaseModal(Stage owner, String title, String fxmlPath,
                     UnidadeMedidaDAO unidadeMedidaDAO, FXMLLoaderFactory fxmlLoaderFactory) {
         this(owner, title, fxmlPath, null, null, null, unidadeMedidaDAO, null, fxmlLoaderFactory);

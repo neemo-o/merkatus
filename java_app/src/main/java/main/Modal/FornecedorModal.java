@@ -26,6 +26,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import main.database.DAOs.FornecedorDAO;
 import main.database.DAOs.EnderecoDAO;
+import main.models.Endereco;
 import main.models.Fornecedor;
 import main.util.FXMLLoaderFactory;
 
@@ -92,9 +93,18 @@ public class FornecedorModal extends BaseModal<Fornecedor> {
         colEmail.setCellValueFactory(new PropertyValueFactory<>("eMail"));
         colEmail.setPrefWidth(150);
 
-        TableColumn<Fornecedor, Integer> colIdEndereco = new TableColumn<>("Id Endereço");
-        colIdEndereco.setCellValueFactory(new PropertyValueFactory<>("idEndereco"));
-        colIdEndereco.setPrefWidth(150);
+        TableColumn<Fornecedor, String> colEndereco = new TableColumn<>("Endereço");
+        colEndereco.setCellValueFactory(cellData -> {
+            Integer id = cellData.getValue().getIdEndereco();
+            if (id != null) {
+                Endereco e = enderecoDAO.findById(id).orElse(null);
+                if (e != null) {
+                    return new javafx.beans.property.SimpleStringProperty(e.toString());
+                }
+            }
+            return new javafx.beans.property.SimpleStringProperty("");
+        });
+        colEndereco.setPrefWidth(200);
 
         TableColumn<Fornecedor, LocalDateTime> colDataCadastro = new TableColumn<>("Data de Cadastro");
         colDataCadastro.setCellValueFactory(new PropertyValueFactory<>("dataCadastro"));
@@ -113,7 +123,7 @@ public class FornecedorModal extends BaseModal<Fornecedor> {
         table.getColumns().add(colNomeFantasia);
         table.getColumns().add(colTelefone);
         table.getColumns().add(colEmail);
-        table.getColumns().add(colIdEndereco);
+        table.getColumns().add(colEndereco);
         table.getColumns().add(colDataCadastro);
         table.getColumns().add(colDataAtualizacao);
 
