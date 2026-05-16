@@ -4,6 +4,8 @@ import javax.sql.DataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -37,6 +39,7 @@ public class DataSourceConfig {
     }
 
     @Bean
+    @Profile("!test") 
     public DataSource licencasDataSource() {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(licencasProps.getUrl());
@@ -51,4 +54,5 @@ public class DataSourceConfig {
         config.setPoolName("ERP-Licencas-Pool");
         return new HikariDataSource(config);
     }
+    
 }

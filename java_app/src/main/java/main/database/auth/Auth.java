@@ -3,12 +3,14 @@ package main.database.auth;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component
+@Profile("!test")  //← adiciona isso
 public class Auth {
 
     private final JdbcTemplate licencasJdbc;

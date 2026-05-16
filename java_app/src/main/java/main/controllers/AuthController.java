@@ -2,6 +2,7 @@ package main.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -16,6 +17,7 @@ import main.database.auth.Auth;
 import main.util.FXMLLoaderFactory;
 
 @Component
+@Profile("!test") 
 public class AuthController {
 
     private double xOffset = 0;

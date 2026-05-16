@@ -2,8 +2,6 @@ package main.database.DAOs;
 
 import main.database.GenericDAO;
 import main.models.TributacaoPerfil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
@@ -15,9 +13,6 @@ import java.util.Optional;
 
 @Component
 public class TributacaoPerfilDAO extends GenericDAO<TributacaoPerfil, Integer> {
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     @Override
     protected String getTabela() { return "tributacao_perfil"; }
@@ -38,13 +33,13 @@ public class TributacaoPerfilDAO extends GenericDAO<TributacaoPerfil, Integer> {
                 WHERE nt.ncm = ?
                   AND tp.ativo = TRUE
                 """;
-        List<TributacaoPerfil> result = jdbcTemplate.query(sql, (rs, rowNum) -> mapear(rs), ncm);
+        List<TributacaoPerfil> result = getJdbc().query(sql, (rs, rowNum) -> mapear(rs), ncm);
         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 
     public List<TributacaoPerfil> findAllAtivos() {
         String sql = "SELECT * FROM tributacao_perfil WHERE ativo = TRUE ORDER BY nome";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> mapear(rs));
+        return getJdbc().query(sql, (rs, rowNum) -> mapear(rs));
     }
 
     @Override

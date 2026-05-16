@@ -6,8 +6,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import main.database.GenericDAO;
@@ -15,9 +13,6 @@ import main.models.Categoria;
 
 @Component
 public class CategoriaDAO extends GenericDAO<Categoria, Integer> {
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     @Override
     protected String getTabela() { return "categorias"; }
@@ -32,17 +27,17 @@ public class CategoriaDAO extends GenericDAO<Categoria, Integer> {
 
     public List<Categoria> findRaizes() {
         String sql = "SELECT * FROM categorias WHERE parent_id IS NULL AND ativo = TRUE ORDER BY nome";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> mapear(rs));
+        return getJdbc().query(sql, (rs, rowNum) -> mapear(rs));
     }
 
     public List<Categoria> findByParent(Integer parentId) {
         String sql = "SELECT * FROM categorias WHERE parent_id = ? AND ativo = TRUE ORDER BY nome";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> mapear(rs), parentId);
+        return getJdbc().query(sql, (rs, rowNum) -> mapear(rs), parentId);
     }
 
     public Optional<Categoria> findByIdComTributacao(Integer idCategoria) {
         String sql = "SELECT * FROM categorias WHERE id_categoria = ?";
-        List<Categoria> result = jdbcTemplate.query(sql, (rs, rowNum) -> mapear(rs), idCategoria);
+        List<Categoria> result = getJdbc().query(sql, (rs, rowNum) -> mapear(rs), idCategoria);
         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 
