@@ -45,7 +45,7 @@ public class FuncionarioDAO extends GenericDAO<Funcionario, Integer> {
         stmt.setObject(5, f.getDataDemissao());
         stmt.setString(6, f.getTelefone());
         stmt.setString(7, f.getEmail());
-        stmt.setBoolean(8, f.getAtivo() != null ? f.getAtivo() : true);
+        stmt.setBoolean(8, Boolean.TRUE.equals(f.getAtivo()));
         stmt.setObject(9, f.getDataCadastro());
         stmt.setObject(10, f.getDataAtualizacao());
     }
@@ -59,7 +59,7 @@ public class FuncionarioDAO extends GenericDAO<Funcionario, Integer> {
         stmt.setObject(5, f.getDataDemissao());
         stmt.setString(6, f.getTelefone());
         stmt.setString(7, f.getEmail());
-        stmt.setBoolean(8, f.getAtivo() != null ? f.getAtivo() : true);
+        stmt.setBoolean(8, Boolean.TRUE.equals(f.getAtivo()));
         stmt.setObject(9, f.getDataAtualizacao());
         stmt.setInt(10, f.getIdFuncionario());
     }

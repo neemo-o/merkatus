@@ -43,7 +43,7 @@ public class FornecedorDAO extends GenericDAO<Fornecedor, Integer> {
         stmt.setString(4, f.getTelefone());
         stmt.setString(5, f.getEMail());
         stmt.setObject(6, f.getIdEndereco());
-        stmt.setBoolean(7, f.getAtivo() != null ? f.getAtivo() : false);
+        stmt.setBoolean(7,  Boolean.TRUE.equals(f.getAtivo())); 
         stmt.setObject(8, f.getDataCadastro());
         stmt.setObject(9, f.getDataAtualizacao());
     }
@@ -56,7 +56,7 @@ public class FornecedorDAO extends GenericDAO<Fornecedor, Integer> {
         stmt.setString(4, f.getTelefone());
         stmt.setString(5, f.getEMail());
         stmt.setObject(6, f.getIdEndereco());
-        stmt.setBoolean(7, f.getAtivo() != null ? f.getAtivo() : false);
+        stmt.setBoolean(7, Boolean.TRUE.equals(f.getAtivo()));
         stmt.setObject(8, f.getDataAtualizacao());
         stmt.setInt(9, f.getIdFornecedor());
     }

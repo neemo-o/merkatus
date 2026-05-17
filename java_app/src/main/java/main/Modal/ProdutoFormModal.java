@@ -31,6 +31,7 @@ import main.models.Categoria;
 import main.models.Fornecedor;
 import main.models.Produto;
 import main.models.UnidadeMedida;
+import main.services.ProdutoService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -47,37 +48,54 @@ public class ProdutoFormModal {
     private final CategoriaDAO categoriaDAO;
     private final FornecedorDAO fornecedorDAO;
     private final UnidadeMedidaDAO unidadeMedidaDAO;
+    private final ProdutoService produtoService;
 
     private Stage stage;
     private Produto produto;
 
-    private TextField txtDescricao, txtCodigoBarras;
+    private TextField txtDescricao;
+    private TextField txtCodigoBarras;
     private ComboBox<UnidadeMedida> cbUnidade;
     private ComboBox<Categoria> cbCategoria;
     private ComboBox<Fornecedor> cbFornecedor;
     private CheckBox chkAtivo;
 
-    private TextField txtPrecoCusto, txtPrecoVenda, txtMargemLucro;
-    private TextField txtPesoLiquido, txtPesoBruto;
+    private TextField txtPrecoCusto;
+    private TextField txtPrecoVenda;
+    private TextField txtMargemLucro;
+    private TextField txtPesoLiquido;
+    private TextField txtPesoBruto;
     private CheckBox chkFracionamento;
 
-    private TextField txtEstoqueAtual, txtEstoqueMinimo, txtEstoqueMaximo;
+    private TextField txtEstoqueAtual;
+    private TextField txtEstoqueMinimo;
+    private TextField txtEstoqueMaximo;
 
-    private double xOff, yOff;
+    private double xOff;
+    private double yOff;
 
-    private TextField txtNcm, txtCest, txtCfop;
-    private TextField txtCstIcms, txtCsosn;
-    private TextField txtCstPis, txtCstCofins, txtCstIpi;
-    private TextField txtAliqIcms, txtAliqPis, txtAliqCofins, txtAliqIpi;
+    private TextField txtNcm;
+    private TextField txtCest;
+    private TextField txtCfop;
+    private TextField txtCstIcms;
+    private TextField txtCsosn;
+    private TextField txtCstPis;
+    private TextField txtCstCofins;
+    private TextField txtCstIpi;
+    private TextField txtAliqIcms;
+    private TextField txtAliqPis;
+    private TextField txtAliqCofins;
+    private TextField txtAliqIpi;
 
     public ProdutoFormModal(Stage owner, Produto produto,
                             ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
-                            FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO) {
+                            FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO, ProdutoService produtoService) {
         this.produto = produto;
         this.produtoDAO = produtoDAO;
         this.categoriaDAO = categoriaDAO;
         this.fornecedorDAO = fornecedorDAO;
         this.unidadeMedidaDAO = unidadeMedidaDAO;
+        this.produtoService = produtoService;
 
         stage = new Stage();
         stage.initOwner(owner);
@@ -406,15 +424,15 @@ public class ProdutoFormModal {
     }
 
     private void calcularMargem() {
-        try {
-            double custo = Double.parseDouble(txtPrecoCusto.getText().replace(",", "."));
-            double venda = Double.parseDouble(txtPrecoVenda.getText().replace(",", "."));
-            if (custo > 0) {
-                double margem = ((venda - custo) / custo) * 100;
-                txtMargemLucro.setText(String.format("%.2f", margem));
-            }
-        } catch (NumberFormatException ignored) {}
+    BigDecimal custo = parseBigDecimal(txtPrecoCusto.getText());
+    BigDecimal venda = parseBigDecimal(txtPrecoVenda.getText());
+    BigDecimal margem = produtoService.calcularMargem(custo, venda);
+    if (margem != null) {
+        txtMargemLucro.setText(margem.toPlainString());
+    } else {
+        txtMargemLucro.clear();
     }
+}
 
     private void preencherCampos() {
         txtDescricao.setText(produto.getDescricao() != null ? produto.getDescricao() : "");

@@ -2,8 +2,6 @@ package main.database.DAOs;
 
 import main.database.GenericDAO;
 import main.models.NcmTributacao;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
@@ -14,9 +12,6 @@ import java.util.Optional;
 
 @Component
 public class NcmTributacaoDAO extends GenericDAO<NcmTributacao, Integer> {
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     @Override
     protected String getTabela() { return "ncm_tributacao"; }
@@ -31,7 +26,7 @@ public class NcmTributacaoDAO extends GenericDAO<NcmTributacao, Integer> {
 
     public Optional<NcmTributacao> findByNcm(String ncm) {
         String sql = "SELECT * FROM ncm_tributacao WHERE ncm = ?";
-        List<NcmTributacao> result = jdbcTemplate.query(sql, (rs, rowNum) -> mapear(rs), ncm);
+        List<NcmTributacao> result = getJdbc().query(sql, (rs, rowNum) -> mapear(rs), ncm);
         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 

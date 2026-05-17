@@ -6,7 +6,7 @@
 
     <groupId>com.mercado</groupId>
     <artifactId>mercado-erp</artifactId>
-    <version>1.0.0</version>
+    <version>0.2.0</version>
     <packaging>jar</packaging>
 
     <name>Mercado ERP</name>
@@ -44,6 +44,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
             <version>${postgresql.version}</version>
         </dependency>
 
@@ -125,9 +126,6 @@
                     </excludes>
                 </configuration>
             </plugin>
-
-            <!-- maven-shade-plugin: REMOVIDO -->
-            <!-- maven-jar-plugin: REMOVIDO -->
         </plugins>
     </build>
 </project>

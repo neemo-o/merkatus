@@ -29,6 +29,7 @@ import javafx.util.Duration;
 import main.Modal.ModalManager;
 import main.Modal.ModalType;
 import main.models.Usuario;
+import main.services.ProdutoService;
 import main.database.DAOs.CategoriaDAO;
 import main.database.DAOs.FornecedorDAO;
 import main.database.DAOs.ProdutoDAO;
@@ -53,13 +54,17 @@ public class MainScreenController {
     private final UnidadeMedidaDAO unidadeMedidaDAO;
     private final EnderecoDAO enderecoDAO;
 
+    private final ProdutoService produtoService;  
+
     public MainScreenController(
             @Qualifier("oficialDataSource") DataSource oficialDataSource,
             FXMLLoaderFactory loaderFactory,
             ProdutoDAO produtoDAO,
             CategoriaDAO categoriaDAO,
             FornecedorDAO fornecedorDAO,
-            UnidadeMedidaDAO unidadeMedidaDAO, EnderecoDAO enderecoDAO) {
+            UnidadeMedidaDAO unidadeMedidaDAO, 
+            EnderecoDAO enderecoDAO,
+            ProdutoService produtoService) {
         this.oficialJdbc = new JdbcTemplate(oficialDataSource);
         this.loaderFactory = loaderFactory;
         this.produtoDAO = produtoDAO;
@@ -67,6 +72,7 @@ public class MainScreenController {
         this.fornecedorDAO = fornecedorDAO;
         this.unidadeMedidaDAO = unidadeMedidaDAO;
         this.enderecoDAO = enderecoDAO;
+        this.produtoService = produtoService;
     }
 
     @FXML
@@ -232,7 +238,7 @@ public class MainScreenController {
     private void handleProdutos() {
         setActiveButton(btnProdutos);
         ModalManager.open(ModalType.PRODUTO, (Stage) contentArea.getScene().getWindow(),
-            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory);
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory , produtoService);
     }
 
     @FXML
@@ -245,7 +251,7 @@ public class MainScreenController {
     private void handleVendas() {
         setActiveButton(btnVendas);
         ModalManager.open(ModalType.VENDA, (Stage) contentArea.getScene().getWindow(),
-            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory);
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory, produtoService);
     }
 
     @FXML
@@ -257,19 +263,19 @@ public class MainScreenController {
     @FXML
     private void handleFornecedores() {
         ModalManager.open(ModalType.FORNECEDOR, (Stage) contentArea.getScene().getWindow(),
-            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory);
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory, produtoService);
     }
 
     @FXML
     private void handleUnidadesMedida() {
         ModalManager.open(ModalType.UNIDADE_MEDIDA, (Stage) contentArea.getScene().getWindow(),
-            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory);
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory, produtoService);
     }
 
     @FXML
     private void handleCategorias() {
         ModalManager.open(ModalType.CATEGORIA, (Stage) contentArea.getScene().getWindow(),
-            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory);
+            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, enderecoDAO, loaderFactory, produtoService);
     }
 
     @FXML

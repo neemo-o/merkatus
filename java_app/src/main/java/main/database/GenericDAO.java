@@ -8,9 +8,6 @@ import org.springframework.jdbc.support.KeyHolder;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -63,7 +60,8 @@ public abstract class GenericDAO<T, ID> {
 
     public long count() {
         String sql = "SELECT COUNT(*) FROM " + getTabela();
-        return jdbcTemplate.queryForObject(sql, Long.class);
+        Long result = jdbcTemplate.queryForObject(sql, Long.class);
+        return result != null ? result : 0L;
     }
 
     public T save(T entidade) {

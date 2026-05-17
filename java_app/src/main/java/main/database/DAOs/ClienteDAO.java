@@ -44,7 +44,7 @@ public class ClienteDAO extends GenericDAO<Cliente, Integer> {
         stmt.setString(8, c.getStatusCliente());
         stmt.setObject(9, c.getDataNascimento()); 
         stmt.setObject(10, c.getLimiteCredito()); 
-        stmt.setBoolean(11, c.getAtivo() != null ? c.getAtivo() : false); 
+        stmt.setBoolean(11, Boolean.TRUE.equals(c.getAtivo())); 
         stmt.setObject(12, c.getDataCadastro()); 
         stmt.setObject(13, c.getDataAtualizacao()); 
     }
@@ -61,7 +61,7 @@ public class ClienteDAO extends GenericDAO<Cliente, Integer> {
         stmt.setString(8, c.getStatusCliente());
         stmt.setObject(9, c.getDataNascimento()); 
         stmt.setObject(10, c.getLimiteCredito()); 
-        stmt.setBoolean(11, c.getAtivo() != null ? c.getAtivo() : false); 
+        stmt.setBoolean(11, Boolean.TRUE.equals(c.getAtivo())); 
         stmt.setObject(12, c.getDataAtualizacao()); 
         stmt.setInt(13, c.getIdCliente());
     }

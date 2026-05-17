@@ -29,21 +29,32 @@ import main.database.DAOs.UnidadeMedidaDAO;
 import main.models.Categoria;
 import main.models.Fornecedor;
 import main.models.Produto;
+import main.services.ProdutoService;
 import main.util.FXMLLoaderFactory;
 
 public class ProdutoModal extends BaseModal<Produto> {
 
-    @FXML private ComboBox<Categoria> cbCategoria;
-    @FXML private ComboBox<Fornecedor> cbFornecedor;
-    @FXML private CheckBox chkAtivo;
-    @FXML private Button btnEditar;
-    @FXML private Button btnExcluir;
+    @FXML
+    private ComboBox<Categoria> cbCategoria;
+    @FXML
+    private ComboBox<Fornecedor> cbFornecedor;
+    @FXML
+    private CheckBox chkAtivo;
+    @FXML
+    private Button btnEditar;
+    @FXML
+    private Button btnExcluir;
 
+    private final ProdutoService produtoService;
 
     public ProdutoModal(Stage owner,
-                       ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
-                       FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO, FXMLLoaderFactory fxmlLoaderFactory) {
-        super(owner, "Produtos", "/main/view/ProdutoModal.fxml", produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, fxmlLoaderFactory);
+            ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
+            FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO,
+            FXMLLoaderFactory fxmlLoaderFactory,
+            ProdutoService produtoService) { // ← parâmetro novo
+        super(owner, "Produtos", "/main/view/ProdutoModal.fxml",
+                produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, fxmlLoaderFactory);
+        this.produtoService = produtoService;
     }
 
     @Override
@@ -139,22 +150,23 @@ public class ProdutoModal extends BaseModal<Produto> {
 
     @Override
     protected boolean matchesSearch(Produto p, String query) {
-        if (query.isEmpty()) return true;
+        if (query.isEmpty())
+            return true;
         return (p.getDescricao() != null && p.getDescricao().toLowerCase().contains(query))
-            || (p.getCodigoBarras() != null && p.getCodigoBarras().toLowerCase().contains(query));
+                || (p.getCodigoBarras() != null && p.getCodigoBarras().toLowerCase().contains(query));
     }
 
     @Override
     protected boolean matchesFilters(Produto p) {
-        boolean categoriaOk  = cbCategoria.getValue() == null
-            || (p.getIdCategoria() != null
-                && p.getIdCategoria().equals(cbCategoria.getValue().getIdCategoria()));
+        boolean categoriaOk = cbCategoria.getValue() == null
+                || (p.getIdCategoria() != null
+                        && p.getIdCategoria().equals(cbCategoria.getValue().getIdCategoria()));
 
         boolean fornecedorOk = cbFornecedor.getValue() == null
-            || (p.getIdFornecedor() != null
-                && p.getIdFornecedor().equals(cbFornecedor.getValue().getIdFornecedor()));
+                || (p.getIdFornecedor() != null
+                        && p.getIdFornecedor().equals(cbFornecedor.getValue().getIdFornecedor()));
 
-        boolean ativoOk      = !chkAtivo.isSelected()          || p.isAtivo();
+        boolean ativoOk = !chkAtivo.isSelected() || p.isAtivo();
         return categoriaOk && fornecedorOk && ativoOk;
     }
 
@@ -166,16 +178,14 @@ public class ProdutoModal extends BaseModal<Produto> {
     }
 
     @Override
-    @FXML
     protected void abrirFormNovo() {
         ProdutoFormModal form = new ProdutoFormModal(stage, null,
-            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO);
+                produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, produtoService);
         form.show();
         loadData();
     }
 
     @Override
-    @FXML
     protected void abrirFormEdicao() {
         Produto selected = tableView.getSelectionModel().getSelectedItem();
         if (selected == null) {
@@ -183,7 +193,7 @@ public class ProdutoModal extends BaseModal<Produto> {
             return;
         }
         ProdutoFormModal form = new ProdutoFormModal(stage, selected,
-            produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO);
+                produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, produtoService);
         form.show();
         loadData();
     }
@@ -228,17 +238,20 @@ public class ProdutoModal extends BaseModal<Produto> {
             mensagem.setMaxWidth(340);
 
             Button btnConfirmar = new Button("Confirmar");
-            btnConfirmar.setStyle("-fx-background-color: #194e8f; -fx-text-fill: white; -fx-font-family: 'Segoe UI'; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 8 20;");
+            btnConfirmar.setStyle(
+                    "-fx-background-color: #194e8f; -fx-text-fill: white; -fx-font-family: 'Segoe UI'; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 8 20;");
 
             Button btnCancelar = new Button("Cancelar");
-            btnCancelar.setStyle("-fx-background-color: transparent; -fx-border-color: #194e8f; -fx-text-fill: #194e8f; -fx-font-family: 'Segoe UI'; -fx-cursor: hand; -fx-padding: 8 20; -fx-border-width: 1;");
+            btnCancelar.setStyle(
+                    "-fx-background-color: transparent; -fx-border-color: #194e8f; -fx-text-fill: #194e8f; -fx-font-family: 'Segoe UI'; -fx-cursor: hand; -fx-padding: 8 20; -fx-border-width: 1;");
 
             HBox botoes = new HBox(10, btnCancelar, btnConfirmar);
             botoes.setAlignment(Pos.CENTER);
             botoes.setPadding(new Insets(12, 0, 0, 0));
 
             VBox content = new VBox(16, topBar, mensagem, botoes);
-            content.setStyle("-fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1; -fx-padding: 0 0 16 0;");
+            content.setStyle(
+                    "-fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1; -fx-padding: 0 0 16 0;");
             content.setPrefWidth(380);
             VBox.setMargin(mensagem, new Insets(16, 16, 0, 16));
             VBox.setMargin(botoes, new Insets(16, 16, 0, 16));
@@ -247,7 +260,7 @@ public class ProdutoModal extends BaseModal<Produto> {
             confirmStage.setScene(scene);
             confirmStage.sizeToScene();
 
-            final boolean[] confirmed = {false};
+            final boolean[] confirmed = { false };
             btnConfirmar.setOnAction(e -> {
                 confirmed[0] = true;
                 confirmStage.close();
