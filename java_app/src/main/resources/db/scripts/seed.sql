@@ -1,3 +1,4 @@
+-- Active: 1764800155343@@127.0.0.1@5432@erp_oficial
 
 -- SEED.SQL — ERP MERCADO
 -- Dados iniciais necessários para o sistema funcionar do zero.
