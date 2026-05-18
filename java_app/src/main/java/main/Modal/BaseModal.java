@@ -58,6 +58,7 @@ public abstract class BaseModal<T> {
        this(owner, title, fxmlPath, null, null, null, null, null, null);
     }
 
+
     public BaseModal(Stage owner, String title, String fxmlPath,
                      ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
                      FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO, EnderecoDAO enderecoDAO, FXMLLoaderFactory fxmlLoaderFactory) {
@@ -108,25 +109,29 @@ public abstract class BaseModal<T> {
 
     @FXML
     public void initialize() {
-        tableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        tableView.getColumns().clear();
-        configureColumns(tableView);
+        if (tableView != null) {
+            tableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+            tableView.getColumns().clear();
+            configureColumns(tableView);
+            tableView.setItems(filteredItems);
+            tableView.setOnMouseClicked(e -> {
+                if (e.getClickCount() == 2) abrirFormEdicao();
+            });
+        }
 
-        txtBusca.textProperty().addListener((obs, old, val) -> applyFilters());
+        if (txtBusca != null) {
+            txtBusca.textProperty().addListener((obs, old, val) -> applyFilters());
+        }
 
-        filteredItems.addListener((javafx.collections.ListChangeListener<T>) c ->
-            lblTotalRegistros.setText("Registros: " + filteredItems.size())
-        );
-
-        tableView.setItems(filteredItems);
-
-        tableView.setOnMouseClicked(e -> {
-            if (e.getClickCount() == 2) abrirFormEdicao();
-        });
+        if (lblTotalRegistros != null) {
+            filteredItems.addListener((javafx.collections.ListChangeListener<T>) c ->
+                lblTotalRegistros.setText("Registros: " + filteredItems.size())
+            );
+        }
     }
 
     protected void applyFilters() {
-        String query = txtBusca.getText().toLowerCase();
+        String query = txtBusca != null ? txtBusca.getText().toLowerCase() : "";
         filteredItems.setAll(
             allItems.stream()
                 .filter(item -> matchesSearch(item, query))

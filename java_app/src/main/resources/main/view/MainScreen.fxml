@@ -43,6 +43,7 @@
                 <Menu text="Relatórios" >
                     <items>
                         <MenuItem onAction="#handleVendas" text="Vendas" />
+                        <MenuItem onAction="#handleEstoque" text="Estoque" />
                     </items>
                 </Menu>
                 <Menu text="Utilitários" />

@@ -1,6 +1,7 @@
 package main.Modal;
 
 import javafx.stage.Stage;
+import main.controllers.EstoqueController;
 import main.database.DAOs.CategoriaDAO;
 import main.database.DAOs.FornecedorDAO;
 import main.database.DAOs.ProdutoDAO;
@@ -17,6 +18,7 @@ public class ModalManager {
             case PRODUTO -> new ProdutoModal(owner, produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, fxmlLoaderFactory );
             case FORNECEDOR -> new FornecedorModal(owner, fornecedorDAO, enderecoDAO, fxmlLoaderFactory);
             case VENDA -> new VendaModal(owner, fxmlLoaderFactory);
+            case ESTOQUE -> new EstoqueController(owner, produtoDAO, fxmlLoaderFactory);
         };
         modal.show();
     }

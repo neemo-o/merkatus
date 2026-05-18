@@ -28,6 +28,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import main.Modal.ModalManager;
 import main.Modal.ModalType;
+import main.controllers.EstoqueController;
 import main.models.Usuario;
 import main.database.DAOs.CategoriaDAO;
 import main.database.DAOs.FornecedorDAO;
@@ -81,8 +82,6 @@ public class MainScreenController {
     private Button btnClientes;
     @FXML
     private Button btnVendas;
-    @FXML
-    private Button btnEstoque;
     @FXML
     private Button btnFornecedores;
     @FXML
@@ -176,7 +175,7 @@ public class MainScreenController {
 
     private void adicionarEfeitosMenu() {
         Button[] botoes = { btnHome, btnProdutos, btnClientes, btnVendas,
-                btnEstoque, btnFornecedores, btnRelatorios, btnConfiguracoes };
+            btnFornecedores, btnRelatorios, btnConfiguracoes };
 
         for (Button btn : botoes) {
             if (btn == null)
@@ -250,8 +249,10 @@ public class MainScreenController {
 
     @FXML
     private void handleEstoque() {
-        setActiveButton(btnEstoque);
-        carregarTela("/main/view/Estoque.fxml");
+        ModalManager.open(ModalType.ESTOQUE,
+            (Stage) contentArea.getScene().getWindow(),
+            produtoDAO, categoriaDAO, fornecedorDAO,
+            unidadeMedidaDAO, enderecoDAO, loaderFactory);
     }
 
     @FXML
