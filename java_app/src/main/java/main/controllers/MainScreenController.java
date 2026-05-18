@@ -256,8 +256,10 @@ public class MainScreenController {
 
     @FXML
     private void handleEstoque() {
-        setActiveButton(btnEstoque);
-        carregarTela("/main/view/Estoque.fxml");
+        ModalManager.open(ModalType.ESTOQUE,
+            (Stage) contentArea.getScene().getWindow(),
+            produtoDAO, categoriaDAO, fornecedorDAO,
+            unidadeMedidaDAO, enderecoDAO, loaderFactory, produtoService);
     }
 
     @FXML

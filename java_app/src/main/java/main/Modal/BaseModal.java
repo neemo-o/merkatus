@@ -58,6 +58,8 @@ public abstract class BaseModal<T> {
        this(owner, title, fxmlPath, null, null, null, null, null, null);
     }
 
+    
+
     public BaseModal(Stage owner, String title, String fxmlPath,
                     UnidadeMedidaDAO unidadeMedidaDAO, FXMLLoaderFactory fxmlLoaderFactory) {
         this(owner, title, fxmlPath, null, null, null, unidadeMedidaDAO, null, fxmlLoaderFactory);
