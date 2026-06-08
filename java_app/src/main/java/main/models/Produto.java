@@ -17,6 +17,10 @@ public class Produto {
     private String        unidadeMedida;       // campo legado (compatibilidade com DAO atual)
     private Integer       idUnidadeMedida;
 
+    @lombok.Getter
+    @lombok.Setter
+    private UnidadeMedida unidadeMedidaObj;
+
     private Integer       idCategoria;
     private Integer       idFornecedor;
 
@@ -61,5 +65,18 @@ public class Produto {
         this();
         this.descricao  = descricao;
         this.precoVenda = precoVenda;
+    }
+    // Getter explícito para JavaFX (PropertyValueFactory prefere isAtivo() para boolean)
+    public boolean isAtivo() {
+        return ativo;
+    }
+    public void marcarComoInativo() {
+        this.ativo = false;
+        this.dataAtualizacao = LocalDateTime.now();
+    }
+    
+    public void marcarComoAtivo() {
+        this.ativo = true;
+        this.dataAtualizacao = LocalDateTime.now();
     }
 }

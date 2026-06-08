@@ -30,6 +30,7 @@ import main.database.DAOs.UnidadeMedidaDAO;
 import main.models.Categoria;
 import main.models.Fornecedor;
 import main.models.Produto;
+import main.models.TributacaoPerfil; // 👈 NOVO IMPORT
 import main.models.UnidadeMedida;
 import main.services.ProdutoService;
 
@@ -219,11 +220,28 @@ public class ProdutoFormModal {
         } catch (Exception e) {
             exibirErroCarregamento("Unidade de Medida", e);
         }
+        
         try {
             cbCategoria.getItems().addAll(categoriaDAO.findAll());
+            
+            // 🚀 NOVO: Listener para auto-preencher campos fiscais ao selecionar categoria
+            cbCategoria.setOnAction(e -> {
+                Categoria categoriaSelecionada = cbCategoria.getValue();
+                
+                // Só auto-preenche se for um NOVO produto (produto == null)
+                // Se estiver editando, mantém os dados fiscais já salvos
+                if (categoriaSelecionada != null && this.produto == null) {
+                    TributacaoPerfil perfil = produtoService.buscarTributacaoPorCategoria(categoriaSelecionada.getIdCategoria());
+                    if (perfil != null) {
+                        preencherCamposFiscaisComPerfil(perfil);
+                    }
+                }
+            });
+            
         } catch (Exception e) {
             exibirErroCarregamento("Categoria", e);
         }
+        
         try {
             cbFornecedor.getItems().addAll(fornecedorDAO.findAll());
         } catch (Exception e) {
@@ -417,22 +435,21 @@ public class ProdutoFormModal {
 
             if (!formatado.equals(newVal)) {
                 campo.setText(formatado);
-
                 campo.positionCaret(formatado.length());
             }
         });
     }
 
     private void calcularMargem() {
-    BigDecimal custo = parseBigDecimal(txtPrecoCusto.getText());
-    BigDecimal venda = parseBigDecimal(txtPrecoVenda.getText());
-    BigDecimal margem = produtoService.calcularMargem(custo, venda);
-    if (margem != null) {
-        txtMargemLucro.setText(margem.toPlainString());
-    } else {
-        txtMargemLucro.clear();
+        BigDecimal custo = parseBigDecimal(txtPrecoCusto.getText());
+        BigDecimal venda = parseBigDecimal(txtPrecoVenda.getText());
+        BigDecimal margem = produtoService.calcularMargem(custo, venda);
+        if (margem != null) {
+            txtMargemLucro.setText(margem.toPlainString());
+        } else {
+            txtMargemLucro.clear();
+        }
     }
-}
 
     private void preencherCampos() {
         txtDescricao.setText(produto.getDescricao() != null ? produto.getDescricao() : "");
@@ -469,10 +486,29 @@ public class ProdutoFormModal {
         calcularMargem();
     }
 
+    /**
+     * 🚀 NOVO: Preenche os campos da aba Fiscal com os dados do perfil de tributação.
+     */
+    private void preencherCamposFiscaisComPerfil(TributacaoPerfil perfil) {
+        if (perfil == null) return;
+
+        if (txtNcm != null)        txtNcm.setText(perfil.getNcm() != null ? perfil.getNcm() : "");
+        if (txtCest != null)       txtCest.setText(perfil.getCest() != null ? perfil.getCest() : "");
+        if (txtCfop != null)       txtCfop.setText(perfil.getCfopVenda() != null ? perfil.getCfopVenda() : "");
+        if (txtCstIcms != null)    txtCstIcms.setText(perfil.getCstIcms() != null ? perfil.getCstIcms() : "");
+        if (txtCsosn != null)      txtCsosn.setText(perfil.getCsosn() != null ? perfil.getCsosn() : "");
+        if (txtCstPis != null)     txtCstPis.setText(perfil.getCstPis() != null ? perfil.getCstPis() : "");
+        if (txtCstCofins != null)  txtCstCofins.setText(perfil.getCstCofins() != null ? perfil.getCstCofins() : "");
+        if (txtCstIpi != null)     txtCstIpi.setText(perfil.getCstIpi() != null ? perfil.getCstIpi() : "");
+        
+        if (txtAliqIcms != null)   txtAliqIcms.setText(perfil.getAliqIcms() != null ? perfil.getAliqIcms().toString() : "0.00");
+        if (txtAliqPis != null)    txtAliqPis.setText(perfil.getAliqPis() != null ? perfil.getAliqPis().toString() : "0.00");
+        if (txtAliqCofins != null) txtAliqCofins.setText(perfil.getAliqCofins() != null ? perfil.getAliqCofins().toString() : "0.00");
+        if (txtAliqIpi != null)    txtAliqIpi.setText(perfil.getAliqIpi() != null ? perfil.getAliqIpi().toString() : "0.00");
+    }
+
     private UnidadeMedida findUnidadeMedida(String sigla) {
-        if (sigla == null) {
-            return null;
-        }
+        if (sigla == null) return null;
         return cbUnidade.getItems().stream()
                 .filter(u -> u != null && sigla.equals(u.getSigla()))
                 .findFirst()
@@ -481,68 +517,42 @@ public class ProdutoFormModal {
 
     private void salvar() {
         String descricao = txtDescricao.getText().trim();
-
         List<String> erros = new ArrayList<>();
 
         // Aba Geral
-        if (txtDescricao.getText().trim().isEmpty())
-            erros.add("• Descrição  (aba Geral)");
-        if (txtCodigoBarras.getText().trim().isEmpty())
-            erros.add("• Código de barras  (aba Geral)");
-        if (cbUnidade.getValue() == null)
-            erros.add("• Unidade de medida  (aba Geral)");
-        if (cbCategoria.getValue() == null)
-            erros.add("• Categoria  (aba Geral)");
-        if (cbFornecedor.getValue() == null)
-            erros.add("• Fornecedor  (aba Geral)");
+        if (txtDescricao.getText().trim().isEmpty()) erros.add("• Descrição (aba Geral)");
+        if (txtCodigoBarras.getText().trim().isEmpty()) erros.add("• Código de barras (aba Geral)");
+        if (cbUnidade.getValue() == null) erros.add("• Unidade de medida (aba Geral)");
+        if (cbCategoria.getValue() == null) erros.add("• Categoria (aba Geral)");
+        if (cbFornecedor.getValue() == null) erros.add("• Fornecedor (aba Geral)");
 
         // Aba Preços
-        if (txtPrecoCusto.getText().trim().isEmpty())
-            erros.add("• Preço de custo  (aba Preços)");
-        if (txtPrecoVenda.getText().trim().isEmpty())
-            erros.add("• Preço de venda  (aba Preços)");
-        if (txtPesoLiquido.getText().trim().isEmpty())
-            erros.add("• Peso líquido  (aba Preços)");
-        if (txtPesoBruto.getText().trim().isEmpty())
-            erros.add("• Peso bruto  (aba Preços)");
+        if (txtPrecoCusto.getText().trim().isEmpty()) erros.add("• Preço de custo (aba Preços)");
+        if (txtPrecoVenda.getText().trim().isEmpty()) erros.add("• Preço de venda (aba Preços)");
+        if (txtPesoLiquido.getText().trim().isEmpty()) erros.add("• Peso líquido (aba Preços)");
+        if (txtPesoBruto.getText().trim().isEmpty()) erros.add("• Peso bruto (aba Preços)");
 
         // Aba Estoque
-        if (txtEstoqueAtual.getText().trim().isEmpty())
-            erros.add("• Estoque atual  (aba Estoque)");
-        if (txtEstoqueMinimo.getText().trim().isEmpty())
-            erros.add("• Estoque mínimo  (aba Estoque)");
-        if (txtEstoqueMaximo.getText().trim().isEmpty())
-            erros.add("• Estoque máximo  (aba Estoque)");
+        if (txtEstoqueAtual.getText().trim().isEmpty()) erros.add("• Estoque atual (aba Estoque)");
+        if (txtEstoqueMinimo.getText().trim().isEmpty()) erros.add("• Estoque mínimo (aba Estoque)");
+        if (txtEstoqueMaximo.getText().trim().isEmpty()) erros.add("• Estoque máximo (aba Estoque)");
 
         // Aba Fiscal
-        if (txtNcm.getText().trim().isEmpty())
-            erros.add("• NCM  (aba Fiscal)");
-        if (txtCest.getText().trim().isEmpty())
-            erros.add("• CEST  (aba Fiscal)");
-        if (txtCfop.getText().trim().isEmpty())
-            erros.add("• CFOP  (aba Fiscal)");
-        if (txtCstIcms.getText().trim().isEmpty())
-            erros.add("• CST ICMS  (aba Fiscal)");
-        if (txtCsosn.getText().trim().isEmpty())
-            erros.add("• CSOSN  (aba Fiscal)");
-        if (txtCstPis.getText().trim().isEmpty())
-            erros.add("• CST PIS  (aba Fiscal)");
-        if (txtCstCofins.getText().trim().isEmpty())
-            erros.add("• CST COFINS  (aba Fiscal)");
-        if (txtCstIpi.getText().trim().isEmpty())
-            erros.add("• CST IPI  (aba Fiscal)");
-        if (txtAliqIcms.getText().trim().isEmpty())
-            erros.add("• Alíquota ICMS  (aba Fiscal)");
-        if (txtAliqPis.getText().trim().isEmpty())
-            erros.add("• Alíquota PIS  (aba Fiscal)");
-        if (txtAliqCofins.getText().trim().isEmpty())
-            erros.add("• Alíquota COFINS  (aba Fiscal)");
-        if (txtAliqIpi.getText().trim().isEmpty())
-            erros.add("• Alíquota IPI  (aba Fiscal)");
+        if (txtNcm.getText().trim().isEmpty()) erros.add("• NCM (aba Fiscal)");
+        if (txtCest.getText().trim().isEmpty()) erros.add("• CEST (aba Fiscal)");
+        if (txtCfop.getText().trim().isEmpty()) erros.add("• CFOP (aba Fiscal)");
+        if (txtCstIcms.getText().trim().isEmpty()) erros.add("• CST ICMS (aba Fiscal)");
+        if (txtCsosn.getText().trim().isEmpty()) erros.add("• CSOSN (aba Fiscal)");
+        if (txtCstPis.getText().trim().isEmpty()) erros.add("• CST PIS (aba Fiscal)");
+        if (txtCstCofins.getText().trim().isEmpty()) erros.add("• CST COFINS (aba Fiscal)");
+        if (txtCstIpi.getText().trim().isEmpty()) erros.add("• CST IPI (aba Fiscal)");
+        if (txtAliqIcms.getText().trim().isEmpty()) erros.add("• Alíquota ICMS (aba Fiscal)");
+        if (txtAliqPis.getText().trim().isEmpty()) erros.add("• Alíquota PIS (aba Fiscal)");
+        if (txtAliqCofins.getText().trim().isEmpty()) erros.add("• Alíquota COFINS (aba Fiscal)");
+        if (txtAliqIpi.getText().trim().isEmpty()) erros.add("• Alíquota IPI (aba Fiscal)");
 
         if (!erros.isEmpty()) {
-            exibirAlerta("Campos obrigatórios",
-            "Preencha os campos abaixo antes de salvar:\n\n" + String.join("\n", erros));
+            exibirAlerta("Campos obrigatórios", "Preencha os campos abaixo antes de salvar:\n\n" + String.join("\n", erros));
             return;
         }
 
@@ -587,6 +597,7 @@ public class ProdutoFormModal {
                 produtoDAO.update(produto);
             }
             exibirAlerta("Produto salvo", "Produto salvo com sucesso!");
+            stage.close();
         } catch (Exception e) {
             exibirAlerta("Erro", "Erro ao salvar o produto: " + e.getMessage());
         }
@@ -599,9 +610,7 @@ public class ProdutoFormModal {
         dialog.initStyle(StageStyle.UNDECORATED);
 
         ImageView logo = new ImageView(new Image(getClass().getResourceAsStream("/main/resources/logoAlter.png")));
-        logo.setFitHeight(22);
-        logo.setFitWidth(22);
-        logo.setPreserveRatio(true);
+        logo.setFitHeight(22); logo.setFitWidth(22); logo.setPreserveRatio(true);
 
         Label lblTitulo = new Label(titulo);
         lblTitulo.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-family: 'Segoe UI'; -fx-font-size: 11;");
@@ -610,26 +619,14 @@ public class ProdutoFormModal {
         HBox.setHgrow(espacoTop, Priority.ALWAYS);
 
         Button btnFechar = new Button("X");
-        btnFechar.setStyle(
-            "-fx-background-color: transparent;" +
-            "-fx-text-fill: rgba(255,255,255,0.8);" +
-            "-fx-font-size: 12;" +
-            "-fx-cursor: hand;" +
-            "-fx-border-width: 0;" +
-            "-fx-padding: 0;"
-        );
+        btnFechar.setStyle("-fx-background-color: transparent; -fx-text-fill: rgba(255,255,255,0.8); -fx-font-size: 12; -fx-cursor: hand; -fx-border-width: 0; -fx-padding: 0;");
         btnFechar.setOnAction(e -> dialog.close());
 
         HBox topBar = new HBox(8, logo, lblTitulo, espacoTop, btnFechar);
         topBar.setStyle("-fx-background-color: #194e8f; -fx-padding: 6 4 6 10; -fx-alignment: CENTER_LEFT;");
 
         Label lblMensagem = new Label(mensagem);
-        lblMensagem.setStyle(
-            "-fx-font-size: 11;" +
-            "-fx-font-family: 'Segoe UI';" +
-            "-fx-text-fill: #333333;" +
-            "-fx-wrap-text: true;"
-        );
+        lblMensagem.setStyle("-fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-text-fill: #333333; -fx-wrap-text: true;");
         lblMensagem.setMaxWidth(340);
         lblMensagem.setPadding(new Insets(16));
 
@@ -637,14 +634,7 @@ public class ProdutoFormModal {
         conteudo.setStyle("-fx-background-color: #f5f5f5;");
 
         Button btnOk = new Button("OK");
-        btnOk.setStyle(
-            "-fx-background-color: " + AZUL + ";" +
-            "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;" +
-            "-fx-font-size: 11;" +
-            "-fx-font-family: 'Segoe UI';" +
-            "-fx-cursor: hand;"
-        );
+        btnOk.setStyle("-fx-background-color: " + AZUL + "; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-cursor: hand;");
         btnOk.setPrefHeight(30);
         btnOk.setPrefWidth(80);
         btnOk.setOnAction(e -> dialog.close());
@@ -652,16 +642,13 @@ public class ProdutoFormModal {
         HBox rodape = new HBox(btnOk);
         rodape.setPadding(new Insets(10));
         rodape.setAlignment(Pos.CENTER_RIGHT);
-        rodape.setStyle(
-            "-fx-background-color: #f5f5f5;" +
-            "-fx-border-color: #d8d8d8;" +
-            "-fx-border-width: 1 0 0 0;"
-        );
+        rodape.setStyle("-fx-background-color: #f5f5f5; -fx-border-color: #d8d8d8; -fx-border-width: 1 0 0 0;");
 
         VBox root = new VBox(topBar, conteudo, rodape);
         dialog.setScene(new Scene(root));
         dialog.showAndWait();
     }
+
     private Label criarLabel(String texto) {
         Label label = new Label(texto);
         label.setStyle(ESTILO_LABEL);
@@ -678,10 +665,8 @@ public class ProdutoFormModal {
 
     private BigDecimal parseBigDecimal(String value) {
         if (value == null) return null;
-
         String trimmed = value.trim();
         if (trimmed.isEmpty()) return null;
-
         try {
             return new BigDecimal(trimmed.replace(",", "."));
         } catch (NumberFormatException e) {
@@ -691,10 +676,8 @@ public class ProdutoFormModal {
 
     private Integer parseInteger(String value) {
         if (value == null) return null;
-
         String trimmed = value.trim();
         if (trimmed.isEmpty()) return null;
-
         try {
             return Integer.parseInt(trimmed);
         } catch (NumberFormatException e) {
@@ -706,4 +689,3 @@ public class ProdutoFormModal {
         stage.showAndWait();
     }
 }
-

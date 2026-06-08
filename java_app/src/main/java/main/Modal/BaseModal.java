@@ -29,10 +29,14 @@ public abstract class BaseModal<T> {
     protected List<T> allItems = new ArrayList<>();
     protected ObservableList<T> filteredItems = FXCollections.observableArrayList();
 
-    @FXML protected TextField txtBusca;
-    @FXML protected TableView<T> tableView;
-    @FXML protected Label lblTotalRegistros;
-    @FXML protected Label lblStatus;
+    @FXML
+    protected TextField txtBusca;
+    @FXML
+    protected TableView<T> tableView;
+    @FXML
+    protected Label lblTotalRegistros;
+    @FXML
+    protected Label lblStatus;
 
     protected ProdutoDAO produtoDAO;
     protected CategoriaDAO categoriaDAO;
@@ -42,44 +46,43 @@ public abstract class BaseModal<T> {
     protected FXMLLoaderFactory fxmlLoaderFactory;
 
     public BaseModal(Stage owner, String title, String fxmlPath,
-                    ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
-                    FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO, FXMLLoaderFactory fxmlLoaderFactory) {
-        this(owner, title, fxmlPath, produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO,null,fxmlLoaderFactory);
+            ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
+            FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO, FXMLLoaderFactory fxmlLoaderFactory) {
+        this(owner, title, fxmlPath, produtoDAO, categoriaDAO, fornecedorDAO, unidadeMedidaDAO, null,
+                fxmlLoaderFactory);
     }
 
     public BaseModal(Stage owner, String title, String fxmlPath,
-                    FornecedorDAO fornecedorDAO, EnderecoDAO enderecoDAO, FXMLLoaderFactory fxmlLoaderFactory) {
+            FornecedorDAO fornecedorDAO, EnderecoDAO enderecoDAO, FXMLLoaderFactory fxmlLoaderFactory) {
         this(owner, title, fxmlPath, null, null, fornecedorDAO, null, enderecoDAO, fxmlLoaderFactory);
     }
 
     // base modal temporario par o layout visual do modal de vendas.
 
     public BaseModal(Stage owner, String title, String fxmlPath) {
-       this(owner, title, fxmlPath, null, null, null, null, null, null);
+        this(owner, title, fxmlPath, null, null, null, null, null, null);
     }
 
-    
-
     public BaseModal(Stage owner, String title, String fxmlPath,
-                    UnidadeMedidaDAO unidadeMedidaDAO, FXMLLoaderFactory fxmlLoaderFactory) {
+            UnidadeMedidaDAO unidadeMedidaDAO, FXMLLoaderFactory fxmlLoaderFactory) {
         this(owner, title, fxmlPath, null, null, null, unidadeMedidaDAO, null, fxmlLoaderFactory);
     }
 
     public BaseModal(Stage owner, String title, String fxmlPath,
-                    CategoriaDAO categoriaDAO, FXMLLoaderFactory fxmlLoaderFactory) {
+            CategoriaDAO categoriaDAO, FXMLLoaderFactory fxmlLoaderFactory) {
         this(owner, title, fxmlPath, null, categoriaDAO, null, null, null, fxmlLoaderFactory);
     }
 
-    public BaseModal(Stage owner, String title, String fxmlPath,
-                     ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
-                     FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO, EnderecoDAO enderecoDAO, FXMLLoaderFactory fxmlLoaderFactory) {
+    protected BaseModal(Stage owner, String title, String fxmlPath,
+            ProdutoDAO produtoDAO, CategoriaDAO categoriaDAO,
+            FornecedorDAO fornecedorDAO, UnidadeMedidaDAO unidadeMedidaDAO, EnderecoDAO enderecoDAO,
+            FXMLLoaderFactory fxmlLoaderFactory) {
         this.produtoDAO = produtoDAO;
         this.categoriaDAO = categoriaDAO;
         this.fornecedorDAO = fornecedorDAO;
         this.unidadeMedidaDAO = unidadeMedidaDAO;
         this.enderecoDAO = enderecoDAO;
         this.fxmlLoaderFactory = fxmlLoaderFactory;
-        
 
         try {
             stage = new Stage();
@@ -90,7 +93,11 @@ public abstract class BaseModal<T> {
             stage.getIcons().add(new Image(getClass().getResourceAsStream("/main/resources/logo.png")));
 
             FXMLLoader loader = fxmlLoaderFactory.create(fxmlPath);
-            loader.setController(this);
+
+            //Se o FXML não tem fx:controller OU o Spring não encontrou o bean, define manualmente
+            if (loader.getController() == null) {
+                loader.setController(this);
+            }
 
             Parent root = loader.load();
             stage.setScene(new Scene(root));
@@ -120,31 +127,41 @@ public abstract class BaseModal<T> {
 
     @FXML
     public void initialize() {
+        //Só prossegue se os campos @FXML foram injetados
+        if (tableView == null || txtBusca == null) {
+            System.err.println("Campos @FXML não injetados. Verifique o FXML e o controller.");
+            return;
+        }
+
         tableView.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         tableView.getColumns().clear();
         configureColumns(tableView);
 
         txtBusca.textProperty().addListener((obs, old, val) -> applyFilters());
 
-        filteredItems.addListener((javafx.collections.ListChangeListener<T>) c ->
-            lblTotalRegistros.setText("Registros: " + filteredItems.size())
-        );
+        filteredItems.addListener((javafx.collections.ListChangeListener<T>) c -> lblTotalRegistros
+                .setText("Registros: " + filteredItems.size()));
 
         tableView.setItems(filteredItems);
 
         tableView.setOnMouseClicked(e -> {
-            if (e.getClickCount() == 2) abrirFormEdicao();
+            if (e.getClickCount() == 2)
+                abrirFormEdicao();
         });
     }
 
     protected void applyFilters() {
+        // Proteção contra campos não injetados
+        if (txtBusca == null || tableView == null) {
+            return; // Aguarda injeção completa
+        }
+
         String query = txtBusca.getText().toLowerCase();
         filteredItems.setAll(
-            allItems.stream()
-                .filter(item -> matchesSearch(item, query))
-                .filter(this::matchesFilters)
-                .collect(Collectors.toList())
-        );
+                allItems.stream()
+                        .filter(item -> matchesSearch(item, query))
+                        .filter(this::matchesFilters)
+                        .collect(Collectors.toList()));
     }
 
     public void loadData() {
@@ -157,16 +174,17 @@ public abstract class BaseModal<T> {
         stage.showAndWait();
     }
 
-    @FXML protected void limparFiltros() {
+    @FXML
+    protected void limparFiltros() {
         txtBusca.clear();
         resetFilters();
         applyFilters();
     }
 
-    @FXML protected void fechar() {
+    @FXML
+    protected void fechar() {
         stage.close();
     }
-
 
     @FXML
     protected void minimizar() {
@@ -174,13 +192,22 @@ public abstract class BaseModal<T> {
     }
 
     // Métodos abstratos que cada modal filho implementa
-    protected abstract List<T>  fetchFromDatabase();
-    protected abstract void     configureColumns(TableView<T> table);
-    protected abstract boolean  matchesSearch(T item, String query);
-    protected abstract boolean  matchesFilters(T item);
-    protected abstract void     resetFilters();
+    protected abstract List<T> fetchFromDatabase();
 
-    @FXML protected abstract void abrirFormNovo();
-    @FXML protected abstract void abrirFormEdicao();
-    @FXML protected abstract void excluirSelecionado();
+    protected abstract void configureColumns(TableView<T> table);
+
+    protected abstract boolean matchesSearch(T item, String query);
+
+    protected abstract boolean matchesFilters(T item);
+
+    protected abstract void resetFilters();
+
+    @FXML
+    protected abstract void abrirFormNovo();
+
+    @FXML
+    protected abstract void abrirFormEdicao();
+
+    @FXML
+    protected abstract void excluirSelecionado();
 }

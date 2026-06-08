@@ -5,7 +5,9 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 import main.Modal.BaseModal;
+import main.database.DAOs.CategoriaDAO;
 import main.database.DAOs.ProdutoDAO;
+import main.models.Categoria;
 import main.models.Produto;
 import main.models.ProdutoRelatorioDTO;
 import main.util.FXMLLoaderFactory;
@@ -20,15 +22,23 @@ import java.util.*;
 
 public class EstoqueController extends BaseModal<Produto> {
 
-    @FXML private ComboBox<?> cbCategoria;
-    @FXML private ComboBox<?> cbFornecedor;
-    @FXML private DatePicker  dataInicio;
-    @FXML private DatePicker  dataFim;
+    @FXML
+    private ComboBox<?> cbCategoria;
+    @FXML
+    private ComboBox<?> cbFornecedor;
+    @FXML
+    private DatePicker dataInicio;
+    @FXML
+    private DatePicker dataFim;
+
+    private final CategoriaDAO categoriaDAO;
 
     public EstoqueController(Stage owner, ProdutoDAO produtoDAO,
-                             FXMLLoaderFactory fxmlLoaderFactory) {
+            FXMLLoaderFactory fxmlLoaderFactory,
+            CategoriaDAO categoriaDAO) {
         super(owner, "Relatório de Estoque", "/main/view/Estoque.fxml",
-              produtoDAO, null, null, null, fxmlLoaderFactory);
+                produtoDAO, null, null, null, fxmlLoaderFactory);
+        this.categoriaDAO = categoriaDAO;
     }
 
     @Override
@@ -51,7 +61,16 @@ public class EstoqueController extends BaseModal<Produto> {
         colDescricao.setPrefWidth(260);
 
         TableColumn<Produto, String> colCategoria = new TableColumn<>("Categoria");
-        colCategoria.setCellValueFactory(new PropertyValueFactory<>("idCategoria"));
+        colCategoria.setCellValueFactory(cellData -> {
+            Integer id = cellData.getValue().getIdCategoria();
+            if (id != null) {
+                return new javafx.beans.property.SimpleStringProperty(
+                        categoriaDAO.findById(id)
+                                .map(Categoria::getNome)
+                                .orElse(""));
+            }
+            return new javafx.beans.property.SimpleStringProperty("");
+        });
         colCategoria.setPrefWidth(90);
 
         TableColumn<Produto, Integer> colQtd = new TableColumn<>("Qtd");
@@ -64,8 +83,9 @@ public class EstoqueController extends BaseModal<Produto> {
 
         TableColumn<Produto, BigDecimal> colVlTotal = new TableColumn<>("Vl.Total");
         colVlTotal.setCellValueFactory(cellData -> {
-            BigDecimal preco   = cellData.getValue().getPrecoVenda()   != null ? cellData.getValue().getPrecoVenda()   : BigDecimal.ZERO;
-            Integer estoque    = cellData.getValue().getEstoqueAtual() != null ? cellData.getValue().getEstoqueAtual() : 0;
+            BigDecimal preco = cellData.getValue().getPrecoVenda() != null ? cellData.getValue().getPrecoVenda()
+                    : BigDecimal.ZERO;
+            Integer estoque = cellData.getValue().getEstoqueAtual() != null ? cellData.getValue().getEstoqueAtual() : 0;
             return new javafx.beans.property.SimpleObjectProperty<>(preco.multiply(new BigDecimal(estoque)));
         });
         colVlTotal.setPrefWidth(100);
@@ -75,28 +95,44 @@ public class EstoqueController extends BaseModal<Produto> {
         colStatus.setPrefWidth(70);
 
         table.getColumns().addAll(colId, colCodigo, colDescricao, colCategoria,
-                                colQtd, colVlUnit, colVlTotal, colStatus);
+                colQtd, colVlUnit, colVlTotal, colStatus);
     }
 
     @Override
     protected boolean matchesSearch(Produto p, String query) {
-        if (query.isEmpty()) return true;
+        if (query.isEmpty())
+            return true;
         return (p.getDescricao() != null && p.getDescricao().toLowerCase().contains(query))
-            || (p.getCodigoBarras() != null && p.getCodigoBarras().toLowerCase().contains(query));
+                || (p.getCodigoBarras() != null && p.getCodigoBarras().toLowerCase().contains(query));
     }
 
     @Override
-    protected boolean matchesFilters(Produto p) { return true; }
+    protected boolean matchesFilters(Produto p) {
+        return true;
+    }
 
     @Override
     protected void resetFilters() {
-        if (dataInicio != null) dataInicio.setValue(null);
-        if (dataFim    != null) dataFim.setValue(null);
+        if (dataInicio != null)
+            dataInicio.setValue(null);
+        if (dataFim != null)
+            dataFim.setValue(null);
     }
 
-    @Override @FXML protected void abrirFormNovo()      {}
-    @Override @FXML protected void abrirFormEdicao()    {}
-    @Override @FXML protected void excluirSelecionado() {}
+    @Override
+    @FXML
+    protected void abrirFormNovo() {
+    }
+
+    @Override
+    @FXML
+    protected void abrirFormEdicao() {
+    }
+
+    @Override
+    @FXML
+    protected void excluirSelecionado() {
+    }
 
     @FXML
     protected void abrirPreview() {
@@ -104,14 +140,15 @@ public class EstoqueController extends BaseModal<Produto> {
             JasperPrint jasperPrint = gerarRelatorio();
 
             // Salva em arquivo temporário
+            
             java.io.File tempPdf = java.io.File.createTempFile("estoque_preview", ".pdf");
             tempPdf.deleteOnExit();
             JasperExportManager.exportReportToPdfFile(jasperPrint, tempPdf.getAbsolutePath());
 
             // Abre no leitor padrão do Windows via ProcessBuilder
             new ProcessBuilder("rundll32", "url.dll,FileProtocolHandler",
-                            tempPdf.getAbsolutePath())
-                .start();
+                    tempPdf.getAbsolutePath())
+                    .start();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -123,14 +160,15 @@ public class EstoqueController extends BaseModal<Produto> {
         try {
             JasperPrint jasperPrint = gerarRelatorio();
             javafx.stage.FileChooser fc = new javafx.stage.FileChooser();
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MM-yyyy");
             fc.setTitle("Salvar PDF");
-            fc.setInitialFileName("relatorio_estoque.pdf");
+            fc.setInitialFileName("Relatorio de Estoque" + "-" + java.time.LocalDate.now().format(fmt) + ".pdf");
             fc.getExtensionFilters().add(
-                new javafx.stage.FileChooser.ExtensionFilter("PDF", "*.pdf"));
+                    new javafx.stage.FileChooser.ExtensionFilter("PDF", "*.pdf"));
             File arquivo = fc.showSaveDialog(tableView.getScene().getWindow());
             if (arquivo != null)
                 JasperExportManager.exportReportToPdfFile(
-                    jasperPrint, arquivo.getAbsolutePath());
+                        jasperPrint, arquivo.getAbsolutePath());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -138,31 +176,38 @@ public class EstoqueController extends BaseModal<Produto> {
 
     private JasperPrint gerarRelatorio() throws JRException {
         List<ProdutoRelatorioDTO> dados = new ArrayList<>();
-        for (Produto p : tableView.getItems())
-            dados.add(new ProdutoRelatorioDTO(p, ""));
+        for (Produto p : tableView.getItems()) {
+            String nomeCategoria = p.getIdCategoria() != null
+                    ? categoriaDAO.findById(p.getIdCategoria())
+                            .map(Categoria::getNome)
+                            .orElse("")
+                    : "";
+            dados.add(new ProdutoRelatorioDTO(p, nomeCategoria));
+        }
 
         BigDecimal totalGeral = dados.stream()
-            .map(ProdutoRelatorioDTO::getVlTotal)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .map(ProdutoRelatorioDTO::getVlTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         String inicio = dataInicio.getValue() != null
-            ? dataInicio.getValue().format(fmt) : "01/01/2026";
+                ? dataInicio.getValue().format(fmt)
+                : "01/01/2026";
         String fim = dataFim.getValue() != null
-            ? dataFim.getValue().format(fmt)
-            : java.time.LocalDate.now().format(fmt);
+                ? dataFim.getValue().format(fmt)
+                : java.time.LocalDate.now().format(fmt);
 
         Map<String, Object> parametros = new HashMap<>();
-        parametros.put("EMPRESA_NOME",   "Merkatus");
+        parametros.put("EMPRESA_NOME", "Merkatus");
         parametros.put("PERIODO_INICIO", inicio);
-        parametros.put("PERIODO_FIM",    fim);
-        parametros.put("USUARIO",        "Administrador");
-        parametros.put("TOTAL_GERAL",    totalGeral);
+        parametros.put("PERIODO_FIM", fim);
+        parametros.put("USUARIO", "Administrador");
+        parametros.put("TOTAL_GERAL", totalGeral);
         parametros.put(JRParameter.REPORT_LOCALE, new Locale("pt", "BR"));
 
         var stream = getClass().getResourceAsStream("/main/view/RelatorioEstoque.jrxml");
         JasperReport jasperReport = JasperCompileManager.compileReport(stream);
         return JasperFillManager.fillReport(jasperReport, parametros,
-            new JRBeanCollectionDataSource(dados));
+                new JRBeanCollectionDataSource(dados));
     }
 }

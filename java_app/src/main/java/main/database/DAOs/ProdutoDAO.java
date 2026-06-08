@@ -3,6 +3,10 @@ package main.database.DAOs;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
@@ -22,6 +26,12 @@ public class ProdutoDAO extends GenericDAO<Produto, Integer> {
         return "id_produto";
     }
 
+    // ATIVA O SOFT DELETE PARA PRODUTO
+    @Override
+    protected String getColunaAtivo() {
+        return "ativo";
+    }
+
     @Override
     protected void setGeneratedId(Produto p, Number id) {
         p.setIdProduto(id.intValue());
@@ -38,7 +48,7 @@ public class ProdutoDAO extends GenericDAO<Produto, Integer> {
                  aliq_icms, aliq_pis, aliq_cofins, aliq_ipi,
                  id_tributacao, peso_liquido, peso_bruto,
                  permite_fracionamento, controla_estoque, balanca, ativo, data_cadastro)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
     }
 
@@ -190,10 +200,54 @@ public class ProdutoDAO extends GenericDAO<Produto, Integer> {
         p.setIdTributacao(rs.getObject("id_tributacao", Integer.class));
         p.setPesoLiquido(rs.getBigDecimal("peso_liquido"));
         p.setPesoBruto(rs.getBigDecimal("peso_bruto"));
+        
         java.sql.Timestamp tsCadastro = rs.getTimestamp("data_cadastro");
         if (tsCadastro != null) p.setDataCadastro(tsCadastro.toLocalDateTime());
+        
         java.sql.Timestamp tsAtualizacao = rs.getTimestamp("data_atualizacao");
         if (tsAtualizacao != null) p.setDataAtualizacao(tsAtualizacao.toLocalDateTime());
+        
         return p;
+    }
+
+    // ==============================
+    // MÉTODOS ESPECÍFICOS PARA LIXEIRA (não genéricos)
+    // ==============================
+
+    /**
+     * Exclusão FÍSICA real (para usar na lixeira).
+     * Use com extrema cautela!
+     */
+    public boolean deletePermanente(Integer id) {
+        String sql = "DELETE FROM " + getTabela() + " WHERE " + getColunaId() + " = ?";
+        return getJdbc().update(sql, id) > 0;
+    }
+
+    /**
+     * Busca com filtros dinâmicos (busca textual + categoria + fornecedor).
+     * Este método é específico para Produto, então mantemos aqui.
+     */
+    public List<Produto> findByFiltros(String busca, Integer idCategoria, Integer idFornecedor) {
+        StringBuilder sql = new StringBuilder(
+            "SELECT * FROM " + getTabela() + " WHERE ativo = true"
+        );
+        List<Object> params = new ArrayList<>();
+
+        if (busca != null && !busca.isBlank()) {
+            sql.append(" AND (descricao LIKE ? OR codigo_barras LIKE ?)");
+            params.add("%" + busca + "%");
+            params.add("%" + busca + "%");
+        }
+        if (idCategoria != null) {
+            sql.append(" AND id_categoria = ?");
+            params.add(idCategoria);
+        }
+        if (idFornecedor != null) {
+            sql.append(" AND id_fornecedor = ?");
+            params.add(idFornecedor);
+        }
+        sql.append(" ORDER BY descricao");
+
+        return getJdbc().query(sql.toString(), (rs, rowNum) -> mapear(rs), params.toArray());
     }
 }

@@ -21,7 +21,7 @@ public class ModalManager {
             case UNIDADE_MEDIDA -> new UnidadeMedidaModal(owner, unidadeMedidaDAO, fxmlLoaderFactory);
             case CATEGORIA      -> new CategoriaModal(owner, categoriaDAO, fxmlLoaderFactory);
             case VENDA -> new VendaModal(owner, fxmlLoaderFactory);
-            case ESTOQUE -> new EstoqueController(owner, produtoDAO, fxmlLoaderFactory);
+            case ESTOQUE -> new EstoqueController(owner, produtoDAO, fxmlLoaderFactory, categoriaDAO);
         };
         modal.show();
     }
