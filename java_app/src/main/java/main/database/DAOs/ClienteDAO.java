@@ -29,48 +29,50 @@ public class ClienteDAO extends GenericDAO<Cliente, Integer> {
 
     @Override
     protected String getSqlInsert() {
-        return "INSERT INTO clientes (cnpj, razao_social, nome_fantasia, inscricao_estadual, email_cliente, telefone_cliente, id_endereco_cliente, status_cliente, data_nascimento, limite_credito, ativo, data_cadastro, data_atualizacao) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        return "INSERT INTO clientes (cnpj, tipo_pessoa, razao_social, nome_fantasia, inscricao_estadual, email_cliente, telefone_cliente, id_endereco_cliente, status_cliente, data_nascimento, limite_credito, ativo, data_cadastro, data_atualizacao) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
     }
 
     @Override
     protected void setParametrosInsert(PreparedStatement stmt, Cliente c) throws SQLException {
         stmt.setString(1, c.getCnpj());
-        stmt.setString(2, c.getRazaoSocial());
-        stmt.setString(3, c.getNomeFantasia());
-        stmt.setString(4, c.getInscricaoEstadual());
-        stmt.setString(5, c.getEmailCliente());
-        stmt.setString(6, c.getTelefoneCliente());
-        stmt.setObject(7, c.getIdEnderecoCliente()); 
-        stmt.setString(8, c.getStatusCliente());
-        stmt.setObject(9, c.getDataNascimento()); 
-        stmt.setObject(10, c.getLimiteCredito()); 
-        stmt.setBoolean(11, Boolean.TRUE.equals(c.getAtivo())); 
-        stmt.setObject(12, c.getDataCadastro()); 
-        stmt.setObject(13, c.getDataAtualizacao()); 
+        stmt.setString(2, c.getTipoPessoa() != null ? c.getTipoPessoa() : "J");
+        stmt.setString(3, c.getRazaoSocial());
+        stmt.setString(4, c.getNomeFantasia());
+        stmt.setString(5, c.getInscricaoEstadual());
+        stmt.setString(6, c.getEmailCliente());
+        stmt.setString(7, c.getTelefoneCliente());
+        stmt.setObject(8, c.getIdEnderecoCliente());
+        stmt.setString(9, c.getStatusCliente());
+        stmt.setObject(10, c.getDataNascimento());
+        stmt.setObject(11, c.getLimiteCredito());
+        stmt.setBoolean(12, Boolean.TRUE.equals(c.getAtivo()));
+        stmt.setObject(13, c.getDataCadastro());
+        stmt.setObject(14, c.getDataAtualizacao());
     }
-    
+
     @Override
     protected void setParametrosUpdate(PreparedStatement stmt, Cliente c) throws SQLException {
         stmt.setString(1, c.getCnpj());
-        stmt.setString(2, c.getRazaoSocial());
-        stmt.setString(3, c.getNomeFantasia());
-        stmt.setString(4, c.getInscricaoEstadual());
-        stmt.setString(5, c.getEmailCliente());
-        stmt.setString(6, c.getTelefoneCliente());
-        stmt.setObject(7, c.getIdEnderecoCliente()); 
-        stmt.setString(8, c.getStatusCliente());
-        stmt.setObject(9, c.getDataNascimento()); 
-        stmt.setObject(10, c.getLimiteCredito()); 
-        stmt.setBoolean(11, Boolean.TRUE.equals(c.getAtivo())); 
-        stmt.setObject(12, c.getDataAtualizacao()); 
-        stmt.setInt(13, c.getIdCliente());
+        stmt.setString(2, c.getTipoPessoa() != null ? c.getTipoPessoa() : "J");
+        stmt.setString(3, c.getRazaoSocial());
+        stmt.setString(4, c.getNomeFantasia());
+        stmt.setString(5, c.getInscricaoEstadual());
+        stmt.setString(6, c.getEmailCliente());
+        stmt.setString(7, c.getTelefoneCliente());
+        stmt.setObject(8, c.getIdEnderecoCliente());
+        stmt.setString(9, c.getStatusCliente());
+        stmt.setObject(10, c.getDataNascimento());
+        stmt.setObject(11, c.getLimiteCredito());
+        stmt.setBoolean(12, Boolean.TRUE.equals(c.getAtivo()));
+        stmt.setObject(13, c.getDataAtualizacao());
+        stmt.setInt(14, c.getIdCliente());
     }
 
     @Override
     protected String getSqlUpdate() {
         return """
                 UPDATE clientes SET
-                cnpj = ?, razao_social = ?, nome_fantasia = ?, inscricao_estadual = ?,
+                cnpj = ?, tipo_pessoa = ?, razao_social = ?, nome_fantasia = ?, inscricao_estadual = ?,
                 email_cliente = ?, telefone_cliente = ?, id_endereco_cliente = ?,
                 status_cliente = ?, data_nascimento = ?, limite_credito = ?,
                 ativo = ?, data_atualizacao = ?
@@ -83,6 +85,8 @@ public class ClienteDAO extends GenericDAO<Cliente, Integer> {
         Cliente c = new Cliente();
         c.setIdCliente(rs.getInt("id_cliente"));
         c.setCnpj(rs.getString("cnpj"));
+        String tipoPessoa = rs.getString("tipo_pessoa");
+        c.setTipoPessoa(tipoPessoa != null ? tipoPessoa.trim() : "J");
         c.setRazaoSocial(rs.getString("razao_social"));
         c.setNomeFantasia(rs.getString("nome_fantasia"));
         c.setInscricaoEstadual(rs.getString("inscricao_estadual"));

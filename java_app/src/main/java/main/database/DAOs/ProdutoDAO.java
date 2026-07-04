@@ -48,7 +48,7 @@ public class ProdutoDAO extends GenericDAO<Produto, Integer> {
                  aliq_icms, aliq_pis, aliq_cofins, aliq_ipi,
                  id_tributacao, peso_liquido, peso_bruto,
                  permite_fracionamento, controla_estoque, balanca, ativo, data_cadastro)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
     }
 
@@ -249,5 +249,31 @@ public class ProdutoDAO extends GenericDAO<Produto, Integer> {
         sql.append(" ORDER BY descricao");
 
         return getJdbc().query(sql.toString(), (rs, rowNum) -> mapear(rs), params.toArray());
+    }
+
+    // ==============================
+    // MÉTODOS DE ESTOQUE (usados pela venda)
+    // ==============================
+
+    /**
+     * Ajusta o estoque atual do produto (delta positivo = entrada, negativo = saída).
+     */
+    public boolean ajustarEstoque(Integer idProduto, int delta) {
+        String sql = "UPDATE produto SET estoque_atual = estoque_atual + ?, data_atualizacao = ? WHERE id_produto = ?";
+        return getJdbc().update(sql, delta, LocalDateTime.now(), idProduto) > 0;
+    }
+
+    /**
+     * Registra a movimentação no histórico movimentacao_estoque.
+     * tipo: ENTRADA, SAIDA ou AJUSTE.
+     */
+    public void registrarMovimentacao(Integer idProduto, String tipo, int quantidade,
+                                      String origem, Integer documentoId, Integer idUsuario) {
+        String sql = """
+                INSERT INTO movimentacao_estoque
+                (id_produto, tipo, quantidade, origem, documento_id, id_usuario)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """;
+        getJdbc().update(sql, idProduto, tipo, quantidade, origem, documentoId, idUsuario);
     }
 }

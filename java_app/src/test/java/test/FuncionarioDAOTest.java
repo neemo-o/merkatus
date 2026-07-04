@@ -3,7 +3,6 @@ package test;
 import static org.junit.jupiter.api.Assertions.*;
 import java.time.LocalDate;
 import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +35,11 @@ class FuncionarioDAOTest {
 
     // CPF tem 11 dígitos
     private String cpfUnico() {
-        return UUID.randomUUID().toString().replaceAll("[^0-9]", "").substring(0, 11);
+        // Gera dígitos a partir de nanoTime (não de um UUID filtrado, que pode
+        // sobrar com menos de 11 dígitos numéricos e estourar o substring)
+        String digits = Long.toString(Math.abs(System.nanoTime()))
+                + String.valueOf((int) (Math.random() * 1_000_000));
+        return digits.substring(digits.length() - 11);
     }
 
     @Test

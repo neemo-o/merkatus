@@ -39,6 +39,7 @@
                         <MenuItem onAction="#handleUnidadesMedida"   text="Unidades de Medida" />
                         <MenuItem onAction="#handleCategorias"       text="Categorias" />
                         <MenuItem onAction="#handleProdutos"         text="Produtos" />
+                        <MenuItem onAction="#handleClientes"         text="Clientes" />
                     </items>
                 </Menu>
                 <Menu text="Manutenção" />
