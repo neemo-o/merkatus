@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane maxHeight="Infinity" maxWidth="Infinity" style="-fx-background-color: #f0f0f0;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
+
+    <center>
+        <VBox spacing="0">
+
+            <!-- Barra de filtros -->
+            <HBox alignment="CENTER_LEFT" spacing="8" style="-fx-background-color: #f5f5f5; -fx-border-color: #d8d8d8; -fx-border-width: 0 0 1 0; -fx-padding: 10 12;">
+                <Label style="-fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-text-fill: #333333;" text="Buscar:" />
+                <TextField fx:id="txtBusca" prefHeight="24" prefWidth="200" promptText="Nº do caixa ou status..." style="-fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1;" />
+
+                <Region HBox.hgrow="ALWAYS" />
+
+                <Button onAction="#limparFiltros" prefHeight="24" style="-fx-background-color: transparent; -fx-border-color: #194e8f; -fx-text-fill: #194e8f; -fx-border-width: 1; -fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-cursor: hand;" text="Limpar Filtros" />
+            </HBox>
+
+            <!-- Cards do caixa atual -->
+            <HBox spacing="12" style="-fx-background-color: #f0f0f0; -fx-padding: 12;">
+                <VBox spacing="4" style="-fx-background-color: white; -fx-border-color: #d8d8d8; -fx-border-width: 1; -fx-border-radius: 4; -fx-padding: 10 16;" HBox.hgrow="ALWAYS">
+                    <Label style="-fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-text-fill: #666666;" text="Status do Caixa" />
+                    <Label fx:id="lblStatusCaixa" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-font-family: 'Segoe UI'; -fx-text-fill: #c0392b;" text="FECHADO" />
+                </VBox>
+
+                <VBox spacing="4" style="-fx-background-color: white; -fx-border-color: #d8d8d8; -fx-border-width: 1; -fx-border-radius: 4; -fx-padding: 10 16;" HBox.hgrow="ALWAYS">
+                    <Label style="-fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-text-fill: #666666;" text="Valor de Abertura" />
+                    <Label fx:id="lblValorAbertura" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-font-family: 'Segoe UI'; -fx-text-fill: #194e8f;" text="-" />
+                </VBox>
+
+                <VBox spacing="4" style="-fx-background-color: white; -fx-border-color: #d8d8d8; -fx-border-width: 1; -fx-border-radius: 4; -fx-padding: 10 16;" HBox.hgrow="ALWAYS">
+                    <Label style="-fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-text-fill: #666666;" text="Dinheiro Esperado na Gaveta" />
+                    <Label fx:id="lblSaldoEsperado" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-font-family: 'Segoe UI'; -fx-text-fill: #194e8f;" text="-" />
+                </VBox>
+            </HBox>
+
+            <!-- Contador -->
+            <HBox style="-fx-background-color: #f5f5f5; -fx-border-color: #d8d8d8; -fx-border-width: 1 0 1 0; -fx-padding: 6 10;">
+                <Label fx:id="lblTotalRegistros" style="-fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-text-fill: #333333;" text="Registros: 0" />
+            </HBox>
+
+            <SplitPane dividerPositions="0.85" VBox.vgrow="ALWAYS">
+
+                <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="AS_NEEDED" style="-fx-background-color: transparent; -fx-border-color: transparent;" vbarPolicy="NEVER">
+                    <TableView fx:id="tableView" prefHeight="600" style="-fx-background-color: white;">
+                        <columns>
+                            <TableColumn fx:id="colId" prefWidth="50" text="ID" />
+                            <TableColumn fx:id="colAbertura" prefWidth="140" text="Abertura" />
+                            <TableColumn fx:id="colFechamento" prefWidth="140" text="Fechamento" />
+                            <TableColumn fx:id="colOperador" prefWidth="80" text="Operador" />
+                            <TableColumn fx:id="colAberturaValor" prefWidth="110" text="Vl. Abertura" />
+                            <TableColumn fx:id="colSistema" prefWidth="110" text="Vl. Sistema" />
+                            <TableColumn fx:id="colContado" prefWidth="110" text="Vl. Contado" />
+                            <TableColumn fx:id="colDiferenca" prefWidth="100" text="Diferença" />
+                            <TableColumn fx:id="colStatus" prefWidth="90" text="Status" />
+                        </columns>
+                    </TableView>
+                </ScrollPane>
+
+                <!-- Painel lateral -->
+                <VBox alignment="TOP_CENTER" minWidth="120" prefWidth="170" spacing="6" style="-fx-background-color: #f5f5f5; -fx-border-color: #cccccc; -fx-border-width: 0 0 0 1;" SplitPane.resizableWithParent="false">
+                    <padding><Insets bottom="12" left="10" right="10" top="12" /></padding>
+
+                    <Button fx:id="btnAbrirCaixa" maxWidth="Infinity" onAction="#abrirFormNovo" prefHeight="32" style="-fx-background-color: #194e8f; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-cursor: hand;" text="Abrir Caixa" />
+
+                    <Button fx:id="btnSuprimento" maxWidth="Infinity" onAction="#registrarSuprimento" prefHeight="32" style="-fx-background-color: transparent; -fx-border-color: #194e8f; -fx-text-fill: #194e8f; -fx-border-width: 1; -fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-cursor: hand;" text="Suprimento" />
+
+                    <Button fx:id="btnSangria" maxWidth="Infinity" onAction="#registrarSangria" prefHeight="32" style="-fx-background-color: transparent; -fx-border-color: #cccccc; -fx-border-width: 1; -fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-cursor: hand;" text="Sangria" />
+
+                    <Button fx:id="btnFecharCaixa" maxWidth="Infinity" onAction="#fecharCaixa" prefHeight="32" style="-fx-background-color: transparent; -fx-border-color: #c0392b; -fx-text-fill: #c0392b; -fx-border-width: 1; -fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-cursor: hand;" text="Fechar Caixa" />
+
+                    <Region VBox.vgrow="ALWAYS" />
+                    <Separator />
+                </VBox>
+            </SplitPane>
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER_LEFT" prefHeight="28" spacing="0" style="-fx-background-color: #e4e4e4; -fx-border-color: #bbbbbb; -fx-border-width: 1 0 0 0; -fx-padding: 0 10;">
+            <Label fx:id="lblStatus" style="-fx-text-fill: #555555; -fx-font-size: 11; -fx-font-family: 'Segoe UI';" text="" />
+        </HBox>
+    </bottom>
+
+</BorderPane>

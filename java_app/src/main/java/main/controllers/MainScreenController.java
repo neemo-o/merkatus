@@ -250,6 +250,16 @@ public class MainScreenController {
     }
 
     @FXML
+    private void handleFuncionarios() {
+        modalManager.open(ModalType.FUNCIONARIO, (Stage) contentArea.getScene().getWindow());
+    }
+
+    @FXML
+    private void handleCaixa() {
+        modalManager.open(ModalType.CAIXA, (Stage) contentArea.getScene().getWindow());
+    }
+
+    @FXML
     private void handleRelatorios() {
         setActiveButton(btnRelatorios);
         carregarTela("/main/view/Relatorios.fxml");

@@ -5,8 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import main.database.DAOs.ItemVendaDAO;
 import main.database.DAOs.ProdutoDAO;
 import main.database.DAOs.VendaDAO;
-import main.models.FormaPagamento;
+import main.models.Caixa;
 import main.models.ItemVenda;
+import main.models.PagamentoVenda;
 import main.models.Produto;
 import main.models.TributacaoPerfil;
 import main.models.Usuario;
@@ -18,7 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,24 +32,35 @@ public class VendaService {
     private final ItemVendaDAO itemVendaDAO;
     private final ProdutoDAO produtoDAO;
     private final TributacaoService tributacaoService;
+    private final CaixaService caixaService;
 
     /**
      * Finaliza uma venda: grava a venda, os itens (com espelho fiscal),
-     * o pagamento e dá baixa no estoque — tudo em uma única transação.
+     * os pagamentos e dá baixa no estoque — tudo em uma única transação.
+     * Se houver caixa aberto, a venda é vinculada a ele.
      *
-     * @param valorRecebido usado para calcular o troco (apenas formas que permitem troco); null = valor exato
+     * @param pagamentos uma ou mais formas de pagamento; o troco é calculado quando
+     *                   o total pago excede o total da venda (apenas formas que permitem troco)
      * @param idCliente cliente vinculado à venda; null = Consumidor Final
      */
     @Transactional
-    public Venda finalizarVenda(List<ItemVenda> itens, FormaPagamento formaPagamento,
-                                BigDecimal desconto, String cpfNota, BigDecimal valorRecebido,
-                                Integer idCliente) {
+    public Venda finalizarVenda(List<ItemVenda> itens, List<PagamentoVenda> pagamentos,
+                                BigDecimal desconto, String cpfNota, Integer idCliente) {
 
         if (itens == null || itens.isEmpty()) {
             throw new IllegalArgumentException("A venda precisa ter ao menos um item.");
         }
-        if (formaPagamento == null) {
-            throw new IllegalArgumentException("Selecione a forma de pagamento.");
+        if (pagamentos == null || pagamentos.isEmpty()) {
+            throw new IllegalArgumentException("Informe ao menos uma forma de pagamento.");
+        }
+        for (PagamentoVenda p : pagamentos) {
+            if (p.getFormaPagamento() == null) {
+                throw new IllegalArgumentException("Selecione a forma de pagamento.");
+            }
+            if (p.getValor() == null || p.getValor().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Valor de pagamento inválido para '"
+                        + p.getFormaPagamento().getDescricao() + "'.");
+            }
         }
 
         BigDecimal subtotal = itens.stream()
@@ -60,19 +74,26 @@ public class VendaService {
 
         BigDecimal valorTotal = subtotal.subtract(desconto);
 
-        BigDecimal troco = BigDecimal.ZERO;
-        if (valorRecebido != null) {
-            troco = valorRecebido.subtract(valorTotal);
-            if (troco.compareTo(BigDecimal.ZERO) < 0) {
-                throw new IllegalArgumentException("Valor recebido é menor que o total da venda.");
-            }
+        BigDecimal totalPago = pagamentos.stream()
+                .map(PagamentoVenda::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal troco = totalPago.subtract(valorTotal);
+        if (troco.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Pagamento insuficiente: faltam R$ "
+                    + troco.negate() + ".");
         }
+
+        // O troco sai do pagamento em dinheiro: o valor registrado de cada forma
+        // é o efetivamente aplicado à venda (a soma fecha com o total).
+        List<BigDecimal> valoresEfetivos = calcularValoresEfetivos(pagamentos, troco);
 
         Usuario operador = SessionManager.getUsuarioAtual();
 
         Venda venda = new Venda();
         venda.setIdOperador(operador != null ? operador.getIdUsuario() : null);
         venda.setIdCliente(idCliente);
+        venda.setIdCaixa(caixaService.buscarCaixaAberto().map(Caixa::getIdCaixa).orElse(null));
         venda.setDataVenda(LocalDateTime.now());
         venda.setSubtotal(subtotal);
         venda.setDesconto(desconto);
@@ -80,7 +101,10 @@ public class VendaService {
         venda.setValorTotal(valorTotal);
         venda.setTroco(troco);
         venda.setCpfNota(cpfNota != null && !cpfNota.isBlank() ? cpfNota : null);
-        venda.setFormaPagamento(formaPagamento.getDescricao());
+        venda.setFormaPagamento(pagamentos.stream()
+                .map(p -> p.getFormaPagamento().getDescricao())
+                .distinct()
+                .collect(Collectors.joining(" + ")));
         venda.setStatus("FINALIZADA");
         venda.setDataCadastro(LocalDateTime.now());
 
@@ -110,13 +134,44 @@ public class VendaService {
             }
         }
 
-        vendaDAO.registrarPagamento(venda.getIdVenda(),
-                formaPagamento.getIdFormaPagamento(), valorTotal);
+        for (int i = 0; i < pagamentos.size(); i++) {
+            BigDecimal valorEfetivo = valoresEfetivos.get(i);
+            if (valorEfetivo.compareTo(BigDecimal.ZERO) > 0) {
+                vendaDAO.registrarPagamento(venda.getIdVenda(),
+                        pagamentos.get(i).getFormaPagamento().getIdFormaPagamento(), valorEfetivo);
+            }
+        }
 
-        log.info("Venda id={} finalizada: {} itens, total R$ {}",
-                venda.getIdVenda(), itens.size(), valorTotal);
+        log.info("Venda id={} finalizada: {} itens, {} pagamento(s), total R$ {}",
+                venda.getIdVenda(), itens.size(), pagamentos.size(), valorTotal);
 
         return venda;
+    }
+
+    /**
+     * Desconta o troco dos pagamentos que permitem troco (do último para o primeiro),
+     * garantindo que a soma dos valores registrados feche com o total da venda.
+     */
+    private List<BigDecimal> calcularValoresEfetivos(List<PagamentoVenda> pagamentos, BigDecimal troco) {
+        List<BigDecimal> efetivos = new ArrayList<>();
+        for (PagamentoVenda p : pagamentos) {
+            efetivos.add(p.getValor());
+        }
+
+        BigDecimal trocoRestante = troco;
+        for (int i = pagamentos.size() - 1; i >= 0 && trocoRestante.compareTo(BigDecimal.ZERO) > 0; i--) {
+            if (Boolean.TRUE.equals(pagamentos.get(i).getFormaPagamento().getPermiteTroco())) {
+                BigDecimal abatido = efetivos.get(i).min(trocoRestante);
+                efetivos.set(i, efetivos.get(i).subtract(abatido));
+                trocoRestante = trocoRestante.subtract(abatido);
+            }
+        }
+
+        if (trocoRestante.compareTo(BigDecimal.ZERO) > 0) {
+            throw new IllegalArgumentException(
+                    "O troco (R$ " + troco + ") só pode sair de pagamentos que permitem troco (ex: dinheiro).");
+        }
+        return efetivos;
     }
 
     /**

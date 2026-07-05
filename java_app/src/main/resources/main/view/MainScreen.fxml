@@ -40,6 +40,12 @@
                         <MenuItem onAction="#handleCategorias"       text="Categorias" />
                         <MenuItem onAction="#handleProdutos"         text="Produtos" />
                         <MenuItem onAction="#handleClientes"         text="Clientes" />
+                        <MenuItem onAction="#handleFuncionarios"     text="Funcionários" />
+                    </items>
+                </Menu>
+                <Menu text="Caixa" >
+                    <items>
+                        <MenuItem onAction="#handleCaixa" text="Abertura / Fechamento" />
                     </items>
                 </Menu>
                 <Menu text="Manutenção" />

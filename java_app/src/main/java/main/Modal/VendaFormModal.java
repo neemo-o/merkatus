@@ -41,6 +41,7 @@ import main.database.DAOs.ProdutoDAO;
 import main.models.Cliente;
 import main.models.FormaPagamento;
 import main.models.ItemVenda;
+import main.models.PagamentoVenda;
 import main.models.Produto;
 import main.models.Venda;
 import main.services.VendaService;
@@ -52,6 +53,9 @@ public class VendaFormModal {
     private static final String ESTILO_LABEL = "-fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-text-fill: #333333;";
     private static final String ESTILO_CAMPO = "-fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1;";
     private static final NumberFormat MOEDA = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+
+    // Sentinela do combo de cliente (idCliente null = venda sem cliente vinculado)
+    private static final Cliente CONSUMIDOR_FINAL = new Cliente();
 
     private final ProdutoDAO produtoDAO;
     private final FormaPagamentoDAO formaPagamentoDAO;
@@ -67,8 +71,10 @@ public class VendaFormModal {
     private ObservableList<ItemVenda> itens = FXCollections.observableArrayList();
     private ComboBox<Cliente> cbCliente;
     private ComboBox<FormaPagamento> cbFormaPagamento;
-    private TextField txtDesconto, txtCpfNota, txtValorRecebido;
-    private Label lblSubtotal, lblTotal, lblTroco;
+    private TextField txtDesconto, txtCpfNota, txtValorPago;
+    private javafx.scene.control.ListView<PagamentoVenda> lvPagamentos;
+    private ObservableList<PagamentoVenda> pagamentos = FXCollections.observableArrayList();
+    private Label lblSubtotal, lblTotal, lblTroco, lblRestante;
     private Button btnRemover;
 
     public VendaFormModal(Stage owner, ProdutoDAO produtoDAO, FormaPagamentoDAO formaPagamentoDAO,
@@ -85,8 +91,9 @@ public class VendaFormModal {
         stage.setTitle("Nova Venda");
 
         VBox root = new VBox(buildTopBar(), buildBarraBusca(), buildTabelaItens(),
-                new Separator(), buildBarraPagamento(), buildRodape());
-        stage.setScene(new Scene(root, 760, 560));
+                new Separator(), buildBarraCliente(), buildBarraPagamento(),
+                buildListaPagamentos(), buildRodape());
+        stage.setScene(new Scene(root, 800, 620));
     }
 
     private HBox buildTopBar() {
@@ -194,38 +201,23 @@ public class VendaFormModal {
         return tabelaItens;
     }
 
-    private HBox buildBarraPagamento() {
+    private HBox buildBarraCliente() {
         Label lblCliente = new Label("Cliente:");
         lblCliente.setStyle(ESTILO_LABEL);
 
         cbCliente = new ComboBox<>();
         cbCliente.setPrefHeight(24);
-        cbCliente.setPrefWidth(180);
+        cbCliente.setPrefWidth(200);
         cbCliente.setStyle(ESTILO_CAMPO);
-        cbCliente.getItems().add(null); // null = Consumidor Final
+        cbCliente.getItems().add(CONSUMIDOR_FINAL);
         try {
             cbCliente.getItems().addAll(clienteDAO.findAll());
         } catch (Exception e) {
             exibirAlerta("Erro", "Erro ao carregar clientes: " + e.getMessage());
         }
-        cbCliente.setValue(null);
+        cbCliente.setValue(CONSUMIDOR_FINAL);
         cbCliente.setButtonCell(criarCelulaCliente());
         cbCliente.setCellFactory(list -> criarCelulaCliente());
-
-        Label lblForma = new Label("Pagamento:");
-        lblForma.setStyle(ESTILO_LABEL);
-
-        cbFormaPagamento = new ComboBox<>();
-        cbFormaPagamento.setPrefHeight(24);
-        cbFormaPagamento.setPrefWidth(150);
-        cbFormaPagamento.setStyle(ESTILO_CAMPO);
-        cbFormaPagamento.setPromptText("Selecione...");
-        try {
-            cbFormaPagamento.getItems().addAll(formaPagamentoDAO.findAll());
-        } catch (Exception e) {
-            exibirAlerta("Erro", "Erro ao carregar formas de pagamento: " + e.getMessage());
-        }
-        cbFormaPagamento.setOnAction(e -> atualizarCampoRecebido());
 
         Label lblDesconto = new Label("Desconto:");
         lblDesconto.setStyle(ESTILO_LABEL);
@@ -247,26 +239,135 @@ public class VendaFormModal {
         txtCpfNota.setStyle(ESTILO_CAMPO);
         aplicarMascaraCpf(txtCpfNota);
 
-        Label lblRecebido = new Label("Recebido:");
-        lblRecebido.setStyle(ESTILO_LABEL);
+        HBox barra = new HBox(8, lblCliente, cbCliente, lblDesconto, txtDesconto, lblCpf, txtCpfNota);
+        barra.setAlignment(Pos.CENTER_LEFT);
+        barra.setPadding(new Insets(10, 12, 6, 12));
+        barra.setStyle("-fx-background-color: #f5f5f5;");
+        return barra;
+    }
 
-        txtValorRecebido = new TextField();
-        txtValorRecebido.setPromptText("0,00");
-        txtValorRecebido.setPrefWidth(80);
-        txtValorRecebido.setPrefHeight(24);
-        txtValorRecebido.setStyle(ESTILO_CAMPO);
-        txtValorRecebido.setDisable(true);
-        txtValorRecebido.textProperty().addListener((obs, old, val) -> atualizarTotais());
+    private HBox buildBarraPagamento() {
+        Label lblForma = new Label("Pagamento:");
+        lblForma.setStyle(ESTILO_LABEL);
+
+        cbFormaPagamento = new ComboBox<>();
+        cbFormaPagamento.setPrefHeight(24);
+        cbFormaPagamento.setPrefWidth(150);
+        cbFormaPagamento.setStyle(ESTILO_CAMPO);
+        cbFormaPagamento.setPromptText("Selecione...");
+        try {
+            cbFormaPagamento.getItems().addAll(formaPagamentoDAO.findAll());
+        } catch (Exception e) {
+            exibirAlerta("Erro", "Erro ao carregar formas de pagamento: " + e.getMessage());
+        }
+
+        Label lblValor = new Label("Valor:");
+        lblValor.setStyle(ESTILO_LABEL);
+
+        txtValorPago = new TextField();
+        txtValorPago.setPromptText("Restante");
+        txtValorPago.setPrefWidth(90);
+        txtValorPago.setPrefHeight(24);
+        txtValorPago.setStyle(ESTILO_CAMPO);
+        txtValorPago.textProperty().addListener((obs, old, val) -> atualizarTotais());
+        txtValorPago.setOnAction(e -> adicionarPagamento());
+
+        Button btnAddPagamento = new Button("Adicionar Pagamento");
+        btnAddPagamento.setStyle(
+            "-fx-background-color: transparent;" +
+            "-fx-border-color: " + AZUL + ";" +
+            "-fx-text-fill: " + AZUL + ";" +
+            "-fx-border-width: 1;" +
+            "-fx-font-size: 11;" +
+            "-fx-font-family: 'Segoe UI';" +
+            "-fx-cursor: hand;"
+        );
+        btnAddPagamento.setPrefHeight(24);
+        btnAddPagamento.setOnAction(e -> adicionarPagamento());
+
+        lblRestante = new Label("Restante: " + MOEDA.format(BigDecimal.ZERO));
+        lblRestante.setStyle(ESTILO_LABEL);
 
         lblTroco = new Label("Troco: " + MOEDA.format(BigDecimal.ZERO));
         lblTroco.setStyle(ESTILO_LABEL);
 
-        HBox barra = new HBox(8, lblCliente, cbCliente, lblForma, cbFormaPagamento, lblDesconto, txtDesconto,
-                lblCpf, txtCpfNota, lblRecebido, txtValorRecebido, lblTroco);
+        HBox barra = new HBox(8, lblForma, cbFormaPagamento, lblValor, txtValorPago,
+                btnAddPagamento, lblRestante, lblTroco);
         barra.setAlignment(Pos.CENTER_LEFT);
-        barra.setPadding(new Insets(10, 12, 10, 12));
-        barra.setStyle("-fx-background-color: #f5f5f5; -fx-border-color: #d8d8d8; -fx-border-width: 0 0 1 0;");
+        barra.setPadding(new Insets(4, 12, 6, 12));
+        barra.setStyle("-fx-background-color: #f5f5f5;");
         return barra;
+    }
+
+    private javafx.scene.control.ListView<PagamentoVenda> buildListaPagamentos() {
+        lvPagamentos = new javafx.scene.control.ListView<>(pagamentos);
+        lvPagamentos.setPrefHeight(64);
+        lvPagamentos.setStyle("-fx-font-size: 11; -fx-font-family: 'Segoe UI';");
+        lvPagamentos.setPlaceholder(new Label(
+                "Pagamento único: selecione a forma e clique em Finalizar. Para dividir, use 'Adicionar Pagamento'."));
+        lvPagamentos.setCellFactory(list -> new javafx.scene.control.ListCell<>() {
+            @Override
+            protected void updateItem(PagamentoVenda item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null
+                        : item.getFormaPagamento().getDescricao() + " — " + MOEDA.format(item.getValor())
+                          + "   (2 cliques para remover)");
+            }
+        });
+        lvPagamentos.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                PagamentoVenda selecionado = lvPagamentos.getSelectionModel().getSelectedItem();
+                if (selecionado != null) {
+                    pagamentos.remove(selecionado);
+                    atualizarTotais();
+                }
+            }
+        });
+        return lvPagamentos;
+    }
+
+    private void adicionarPagamento() {
+        FormaPagamento forma = cbFormaPagamento.getValue();
+        if (forma == null) {
+            exibirAlerta("Forma de pagamento", "Selecione a forma de pagamento antes de adicionar.");
+            return;
+        }
+
+        BigDecimal valor;
+        String texto = txtValorPago.getText().trim();
+        if (texto.isEmpty()) {
+            valor = calcularRestante(); // vazio = paga o restante
+        } else {
+            valor = parseMoedaSilencioso(texto);
+            if (valor == null) {
+                exibirAlerta("Valor inválido", "Informe o valor no formato 0,00.");
+                return;
+            }
+        }
+
+        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+            exibirAlerta("Valor inválido", "O valor do pagamento deve ser maior que zero.");
+            return;
+        }
+
+        pagamentos.add(new PagamentoVenda(forma, valor));
+        txtValorPago.clear();
+        atualizarTotais();
+    }
+
+    private BigDecimal calcularRestante() {
+        BigDecimal total = calcularTotal();
+        BigDecimal pago = pagamentos.stream()
+                .map(PagamentoVenda::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal restante = total.subtract(pago);
+        return restante.compareTo(BigDecimal.ZERO) > 0 ? restante : BigDecimal.ZERO;
+    }
+
+    private BigDecimal calcularTotal() {
+        BigDecimal desconto = parseMoedaSilencioso(txtDesconto.getText());
+        BigDecimal total = calcularSubtotal().subtract(desconto != null ? desconto : BigDecimal.ZERO);
+        return total.compareTo(BigDecimal.ZERO) > 0 ? total : BigDecimal.ZERO;
     }
 
     private HBox buildRodape() {
@@ -438,27 +539,30 @@ public class VendaFormModal {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private void atualizarCampoRecebido() {
-        FormaPagamento forma = cbFormaPagamento.getValue();
-        boolean permiteTroco = forma != null && Boolean.TRUE.equals(forma.getPermiteTroco());
-        txtValorRecebido.setDisable(!permiteTroco);
-        if (!permiteTroco) txtValorRecebido.clear();
-        atualizarTotais();
-    }
-
     private void atualizarTotais() {
         BigDecimal subtotal = calcularSubtotal();
-        BigDecimal desconto = parseMoedaSilencioso(txtDesconto.getText());
-        BigDecimal total = subtotal.subtract(desconto != null ? desconto : BigDecimal.ZERO);
-        if (total.compareTo(BigDecimal.ZERO) < 0) total = BigDecimal.ZERO;
+        BigDecimal total = calcularTotal();
 
         lblSubtotal.setText(MOEDA.format(subtotal));
         lblTotal.setText(MOEDA.format(total));
 
-        BigDecimal recebido = parseMoedaSilencioso(txtValorRecebido.getText());
-        BigDecimal troco = recebido != null ? recebido.subtract(total) : BigDecimal.ZERO;
-        if (troco.compareTo(BigDecimal.ZERO) < 0) troco = BigDecimal.ZERO;
-        lblTroco.setText("Troco: " + MOEDA.format(troco));
+        BigDecimal pago = pagamentos.stream()
+                .map(PagamentoVenda::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Sem pagamentos adicionados, o campo Valor serve de prévia (fluxo rápido)
+        if (pagamentos.isEmpty()) {
+            BigDecimal valorDigitado = parseMoedaSilencioso(txtValorPago.getText());
+            if (valorDigitado != null) pago = valorDigitado;
+        }
+
+        BigDecimal restante = total.subtract(pago);
+        BigDecimal troco = pago.subtract(total);
+
+        lblRestante.setText("Restante: " + MOEDA.format(
+                restante.compareTo(BigDecimal.ZERO) > 0 ? restante : BigDecimal.ZERO));
+        lblTroco.setText("Troco: " + MOEDA.format(
+                troco.compareTo(BigDecimal.ZERO) > 0 ? troco : BigDecimal.ZERO));
     }
 
     private BigDecimal parseMoedaSilencioso(String texto) {
@@ -475,9 +579,8 @@ public class VendaFormModal {
             @Override
             protected void updateItem(Cliente item, boolean empty) {
                 super.updateItem(item, empty);
-                // "empty" também é true quando o valor selecionado é null (Consumidor Final),
-                // então o texto é decidido só pelo item, não pela flag empty.
-                setText(item == null ? "Consumidor Final" : item.getRazaoSocial());
+                setText(empty || item == null ? null
+                        : (item.getIdCliente() == null ? "Consumidor Final" : item.getRazaoSocial()));
             }
         };
     }
@@ -515,12 +618,6 @@ public class VendaFormModal {
             return;
         }
 
-        FormaPagamento forma = cbFormaPagamento.getValue();
-        if (forma == null) {
-            exibirAlerta("Forma de pagamento", "Selecione a forma de pagamento.");
-            return;
-        }
-
         String textoDesconto = txtDesconto.getText().trim();
         BigDecimal desconto = parseMoedaSilencioso(textoDesconto);
         if (!textoDesconto.isEmpty() && desconto == null) {
@@ -528,23 +625,34 @@ public class VendaFormModal {
             return;
         }
 
-        BigDecimal valorRecebido = null;
-        if (Boolean.TRUE.equals(forma.getPermiteTroco())) {
-            String textoRecebido = txtValorRecebido.getText().trim();
-            if (!textoRecebido.isEmpty()) {
-                valorRecebido = parseMoedaSilencioso(textoRecebido);
-                if (valorRecebido == null) {
-                    exibirAlerta("Valor recebido inválido", "Informe o valor recebido no formato 0,00.");
+        // Fluxo rápido: sem pagamentos adicionados, a forma selecionada paga a venda
+        // inteira (o campo Valor, se preenchido, é o valor recebido — gera troco).
+        List<PagamentoVenda> pagamentosVenda = new ArrayList<>(pagamentos);
+        if (pagamentosVenda.isEmpty()) {
+            FormaPagamento forma = cbFormaPagamento.getValue();
+            if (forma == null) {
+                exibirAlerta("Forma de pagamento", "Selecione a forma de pagamento.");
+                return;
+            }
+            String textoValor = txtValorPago.getText().trim();
+            BigDecimal valorPago;
+            if (textoValor.isEmpty()) {
+                valorPago = calcularTotal();
+            } else {
+                valorPago = parseMoedaSilencioso(textoValor);
+                if (valorPago == null) {
+                    exibirAlerta("Valor inválido", "Informe o valor no formato 0,00.");
                     return;
                 }
             }
+            pagamentosVenda.add(new PagamentoVenda(forma, valorPago));
         }
 
         Cliente cliente = cbCliente.getValue();
 
         try {
-            Venda venda = vendaService.finalizarVenda(new ArrayList<>(itens), forma,
-                    desconto, txtCpfNota.getText().trim(), valorRecebido,
+            Venda venda = vendaService.finalizarVenda(new ArrayList<>(itens), pagamentosVenda,
+                    desconto, txtCpfNota.getText().trim(),
                     cliente != null ? cliente.getIdCliente() : null);
 
             String mensagem = "Venda nº " + venda.getIdVenda() + " finalizada!\n"

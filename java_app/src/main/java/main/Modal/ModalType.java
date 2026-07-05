@@ -5,6 +5,8 @@ public enum ModalType {
     UNIDADE_MEDIDA,
     CATEGORIA,
     CLIENTE,
+    FUNCIONARIO,
     VENDA,
+    CAIXA,
     ESTOQUE
 }
