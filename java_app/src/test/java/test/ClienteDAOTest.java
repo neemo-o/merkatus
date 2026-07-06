@@ -2,7 +2,6 @@ package test;
 
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +33,11 @@ class ClienteDAOTest {
     }
 
     private String cnpjUnico() {
-        return UUID.randomUUID().toString().replaceAll("[^0-9]", "").substring(0, 14);
+        // Gera dígitos a partir de nanoTime (não de um UUID filtrado, que pode
+        // sobrar com menos de 14 dígitos numéricos e estourar o substring)
+        String digits = Long.toString(Math.abs(System.nanoTime()))
+                + String.valueOf((int) (Math.random() * 1_000_000));
+        return digits.substring(digits.length() - 14);
     }
 
     @Test
@@ -72,6 +75,34 @@ class ClienteDAOTest {
         Optional<Cliente> encontrado = clienteDAO.findById(salvo.getIdCliente());
         assertTrue(encontrado.isPresent());
         assertEquals("Atualizada SA", encontrado.get().getRazaoSocial());
+    }
+
+    @Test
+    void deveSalvarPessoaFisicaComCpf() {
+        Cliente c = TestFactory.cliente(cnpjUnico().substring(0, 11)); // CPF: 11 dígitos
+        c.setTipoPessoa("F");
+        c.setRazaoSocial("João da Silva");
+        c.setStatusCliente("PAGO");
+
+        Cliente salvo = clienteDAO.save(c);
+
+        Optional<Cliente> encontrado = clienteDAO.findById(salvo.getIdCliente());
+        assertTrue(encontrado.isPresent());
+        assertEquals("F", encontrado.get().getTipoPessoa());
+        assertEquals("João da Silva", encontrado.get().getRazaoSocial());
+        assertEquals(11, encontrado.get().getCnpj().length());
+    }
+
+    @Test
+    void deveRejeitarDocumentoInconsistenteComTipoPessoa() {
+        // CPF de 11 dígitos marcado como pessoa jurídica (exige 14) — deve violar o CHECK do banco
+        Cliente c = TestFactory.cliente(cnpjUnico().substring(0, 11));
+        c.setTipoPessoa("J");
+        c.setRazaoSocial("Documento Inconsistente SA");
+        c.setStatusCliente("PAGO");
+
+        assertThrows(org.springframework.dao.DataIntegrityViolationException.class,
+                () -> clienteDAO.save(c));
     }
 
     @Test

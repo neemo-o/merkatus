@@ -14,7 +14,8 @@ class ProdutoServiceTest {
 
     @BeforeEach
     void setup(TestInfo info) {
-        service = new ProdutoService();
+        // Os métodos de cálculo testados não usam os DAOs
+        service = new ProdutoService(null, null, null);
         log.info(">>> Iniciando: {}", info.getDisplayName());
     }
 

@@ -2,7 +2,6 @@ package test;
 
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +34,11 @@ class FornecedorDAOTest {
 
     // CNPJ tem 14 dígitos — gera um único por teste para evitar unique constraint
     private String cnpjUnico() {
-        return UUID.randomUUID().toString().replaceAll("[^0-9]", "").substring(0, 14);
+        // Gera dígitos a partir de nanoTime (não de um UUID filtrado, que pode
+        // sobrar com menos de 14 dígitos numéricos e estourar o substring)
+        String digits = Long.toString(Math.abs(System.nanoTime()))
+                + String.valueOf((int) (Math.random() * 1_000_000));
+        return digits.substring(digits.length() - 14);
     }
 
     @Test

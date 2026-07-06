@@ -251,6 +251,8 @@ CREATE TABLE IF NOT EXISTS tabelas_preco_itens (
 CREATE TABLE IF NOT EXISTS clientes (
     id_cliente              SERIAL,
     cnpj                    VARCHAR(14) NOT NULL PRIMARY KEY,
+    tipo_pessoa             CHAR(1) NOT NULL DEFAULT 'J'
+                                CHECK (tipo_pessoa IN ('F', 'J')),
     razao_social            VARCHAR(255) NOT NULL,
     nome_fantasia           VARCHAR(255),
     inscricao_estadual      VARCHAR(255),
@@ -263,9 +265,31 @@ CREATE TABLE IF NOT EXISTS clientes (
     limite_credito          DECIMAL(12, 2),
     ativo                   BOOLEAN NOT NULL DEFAULT TRUE,
     data_cadastro           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    data_atualizacao        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    data_atualizacao        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_clientes_documento_tipo_pessoa CHECK (
+        (tipo_pessoa = 'F' AND length(cnpj) = 11) OR
+        (tipo_pessoa = 'J' AND length(cnpj) = 14)
+    )
 );
 COMMENT ON TABLE clientes IS 'Cadastro de clientes — PK é cnpj por compatibilidade com DAO existente';
+COMMENT ON COLUMN clientes.cnpj IS 'Documento: CPF (11 dígitos, tipo_pessoa=F) ou CNPJ (14 dígitos, tipo_pessoa=J)';
+
+-- Migração para bancos criados antes da coluna tipo_pessoa (idempotente)
+ALTER TABLE clientes ADD COLUMN IF NOT EXISTS tipo_pessoa CHAR(1) NOT NULL DEFAULT 'J'
+    CHECK (tipo_pessoa IN ('F', 'J'));
+
+-- Migração para bancos criados antes do vínculo documento<->tipo_pessoa (idempotente)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'chk_clientes_documento_tipo_pessoa'
+    ) THEN
+        ALTER TABLE clientes ADD CONSTRAINT chk_clientes_documento_tipo_pessoa CHECK (
+            (tipo_pessoa = 'F' AND length(cnpj) = 11) OR
+            (tipo_pessoa = 'J' AND length(cnpj) = 14)
+        );
+    END IF;
+END $$;
 
 -- ========================================
 -- 12. FUNCIONÁRIOS

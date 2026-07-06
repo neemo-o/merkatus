@@ -13,7 +13,11 @@ import lombok.AllArgsConstructor;
 public class Cliente {
 
     private Integer idCliente;
+    // Documento: CPF (11 dígitos) para pessoa física, CNPJ (14) para jurídica
     private String cnpj;
+    // 'F' = pessoa física, 'J' = pessoa jurídica
+    private String tipoPessoa = "J";
+    // Para pessoa física guarda o nome completo
     private String razaoSocial;
     private String nomeFantasia;
     private String inscricaoEstadual;

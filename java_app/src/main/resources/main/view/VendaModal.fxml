@@ -93,6 +93,13 @@
 
                     <Region VBox.vgrow="ALWAYS" />
                     <Separator />
+
+                    <!-- Botões do relatório -->
+                    <Button fx:id="btnPreview" maxWidth="Infinity" onAction="#abrirPreview" prefHeight="32"
+                            style="-fx-background-color: transparent; -fx-border-color: #194e8f; -fx-text-fill: #194e8f; -fx-border-width: 1; -fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-cursor: hand;" text="Preview" />
+
+                    <Button fx:id="btnExportarPdf" maxWidth="Infinity" onAction="#exportarPdf" prefHeight="32"
+                            style="-fx-background-color: #194e8f; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11; -fx-font-family: 'Segoe UI'; -fx-cursor: hand;" text="Exportar PDF" />
                 </VBox>
             </SplitPane>
         </VBox>
